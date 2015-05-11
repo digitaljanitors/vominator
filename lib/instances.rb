@@ -64,3 +64,7 @@ OptionParser.new do |opts|
     exit
   end
 end
+
+if options[:list]
+  puts LOGGER.success('awww shit')
+end
