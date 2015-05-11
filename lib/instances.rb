@@ -3,6 +3,8 @@ require 'rubygems'
 require 'optparse'
 require 'logger'
 require 'colored'
+require './constants.rb'
+require './aws.rb'
 
 options = {}
 
@@ -62,5 +64,4 @@ OptionParser.new do |opts|
     exit
   end
 end
-
 
