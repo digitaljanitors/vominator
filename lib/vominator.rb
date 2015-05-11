@@ -17,15 +17,15 @@ module Vominator
 
   class Logger
     def self.info(message)
-      return message
+      puts message
     end
 
     def self.error(message)
-      return message.red
+      puts message.red
     end
 
     def self.success(message)
-      return message.green
+      puts message.green
     end
   end
 end
