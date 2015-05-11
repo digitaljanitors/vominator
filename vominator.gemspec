@@ -14,10 +14,12 @@ Gem::Specification.new do |spec|
   spec.license       = "gplv3"
 
   spec.files         = `git ls-files -z`.split("\x0")
-  spec.executables   = %w{vominator2}
+  spec.executables   = %w{vominate}
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
+  spec.add_dependency "aws-sdk", "~> 2.0"
+  spec.add_dependency "colored", "~> 1.2"
   spec.add_development_dependency "bundler", "~> 1.6"
   spec.add_development_dependency "rake"
 end

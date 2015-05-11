@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+if ARGV[0] == 'instances'
+  require 'instances.rb'
+end

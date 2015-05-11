@@ -1,3 +1,0 @@
-#!/usr/bin/env ruby
-require 'vominator/ec2.rb'
-
