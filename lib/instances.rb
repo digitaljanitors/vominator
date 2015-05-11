@@ -64,4 +64,3 @@ OptionParser.new do |opts|
     exit
   end
 end
-
