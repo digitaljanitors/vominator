@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 require 'rubygems'
 require 'optparse'
-require 'logger'
 require 'colored'
 require './constants.rb'
 require './aws.rb'
@@ -58,7 +57,7 @@ OptionParser.new do |opts|
 
   begin
     opts.parse!
-    throw Exception unless (options.include? :environment) && (options.include? :product)
+    throw Exception unless ((options.include? :environment) && (options.include? :product)) || options[:list]
   rescue
     puts opts
     exit
@@ -66,5 +65,12 @@ OptionParser.new do |opts|
 end
 
 if options[:list]
-  LOGGER.success('awww shit')
+  data = {}
+  PUKE_CONFIG.keys.each do |environment|
+    puts "--#{environment}"
+    products = PUKE_CONFIG[environment]['products'] || Array.new
+    products.each do |product|
+      puts "  --#{product}"
+    end
+  end
 end
