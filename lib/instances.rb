@@ -4,21 +4,23 @@ require 'optparse'
 require 'colored'
 require './constants.rb'
 require './aws.rb'
+require './vominator/ec2.rb'
+require './vominator/instances.rb'
 
 options = {}
 
 OptionParser.new do |opts|
   opts.banner = 'Usage: vominate instance [options]'.yellow
 
-  opts.on('-p', '--product', 'REQUIRED: The product which you want to manage instances for') do |value|
+  opts.on('-pPRODUCT', '--product PRODUCT', 'REQUIRED: The product which you want to manage instances for') do |value|
     options[:product] = value
   end
 
-  opts.on('-e', '--environment', 'REQUIRED: The environment which you want to manage instances for') do |value|
+  opts.on('-eENVIRONMENT', '--environment ENVIRONMENT', 'REQUIRED: The environment which you want to manage instances for') do |value|
     options[:environment] = value
   end
 
-  opts.on('-s', '--servers', 'OPTIONAL: Comma Delimited list of servers that you want to manage instances for') do |value|
+  opts.on('-sSERVERS', '--servers SERVERS', 'OPTIONAL: Comma Delimited list of servers that you want to manage instances for') do |value|
     options[:servers] = value.split(',')
   end
 
@@ -51,7 +53,7 @@ OptionParser.new do |opts|
   end
 
   opts.on_tail(:NONE, '-h', '--help', 'OPTIONAL: Display this screen') do
-    puts opts
+    LOGGER.INFO(opts)
     exit
   end
 
@@ -59,18 +61,28 @@ OptionParser.new do |opts|
     opts.parse!
     throw Exception unless ((options.include? :environment) && (options.include? :product)) || options[:list]
   rescue
-    puts opts
-    exit
+    LOGGER.ERROR(opts)
   end
 end
 
 if options[:list]
   data = {}
   PUKE_CONFIG.keys.each do |environment|
-    puts "--#{environment}"
+    LOGGER.info "--#{environment}"
     products = PUKE_CONFIG[environment]['products'] || Array.new
     products.each do |product|
-      puts "  --#{product}"
+      LOGGER.info "  --#{product}"
     end
   end
+  exit(1)
+end
+
+instances = Vominator::Instances.get_instances(options[:environment], options[:product])
+
+unless instances
+  LOGGER.error('Unable to load instances. Make sure the product is correctly defined for the environment you have selected.')
+end
+
+instances.each do |instance|
+  LOGGER.info(instance)
 end
