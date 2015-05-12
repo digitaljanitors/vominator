@@ -22,6 +22,7 @@ module Vominator
 
     def self.error(message)
       puts message.red
+      exit(1)
     end
 
     def self.success(message)
