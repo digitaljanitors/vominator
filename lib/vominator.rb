@@ -38,6 +38,10 @@ module Vominator
       puts message
     end
 
+    def self.test(message)
+      puts message.cyan
+    end
+
     def self.error(message)
       puts message.red
     end

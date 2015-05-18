@@ -147,6 +147,15 @@ instances.each do |instance|
     ami = Vominator::EC2.get_ami(puke_config,instance_type,instance['os'])
   end
 
+  subnet = "#{instance_ip.rpartition('.')[0]}.0/24"
+  unless existing_subnets[subnet]
+    if options[:test]
+      LOGGER.test("Would create a subnet for #{subnet} in #{instance['az']}")
+    else
+      existing_subnets[subnet] = Vominator::EC2.create_subnet(ec2, subnet, instance['az'], puke_config['vpc_id'])
+      LOGGER.success("Created #{subnet} in #{instance['az']} for #{fqdn}")
+    end
+  end
 
 
 end

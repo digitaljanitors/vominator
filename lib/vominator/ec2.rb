@@ -41,5 +41,10 @@ module Vominator
       end
       return ami
     end
+
+    def self.create_subnet(resource, subnet, az, vpc_id)
+      subnet = resource.vpcs(filters: [{name: 'vpc-id', values: [vpc_id]}]).first.create_subnet(:cidr_block => subnet, :availability_zone => az)
+      return subnet
+    end
   end
 end
