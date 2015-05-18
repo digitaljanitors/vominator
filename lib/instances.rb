@@ -91,7 +91,12 @@ else
     exit(1)
   end
 end
-instances = Vominator::Instances.get_instances(options[:environment], options[:product])
+
+if options[:servers]
+  instances = Vominator::Instances.get_instances(options[:environment], options[:product], options[:servers])
+else
+  instances = Vominator::Instances.get_instances(options[:environment], options[:product], false)
+end
 
 unless instances
   LOGGER.error('Unable to load instances. Make sure the product is correctly defined for the environment you have selected.')
@@ -113,5 +118,6 @@ r53 = Aws::Route53::Client.new(region: puke_config['region_name'])
 route53_records = Vominator::Route53.get_records(r53, puke_config['zone'])
 
 instances.each do |instance|
-
+  hostname = instance.keys[0]
+  puts hostname
 end
