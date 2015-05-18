@@ -39,7 +39,11 @@ module Vominator
     end
 
     def self.error(message)
-      puts message
+      puts message.red
+    end
+
+    def self.fatal(message)
+      puts message.red
       exit(1)
     end
 
