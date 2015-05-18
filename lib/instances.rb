@@ -117,19 +117,34 @@ r53 = Aws::Route53::Client.new(region: puke_config['region_name'])
 #Get existing DNS entries for the zone.
 route53_records = Vominator::Route53.get_records(r53, puke_config['zone'])
 
+
+#Get existing Subnets for the VPC
+existing_subnets = Vominator::EC2.get_subnets(ec2, puke_config['vpc_id'])
+
+#Get existing Security Groups for the VPC
+existing_security_groups = Vominator::EC2.get_security_groups(ec2, puke_config['vpc_id'])
+
 instances.each do |instance|
   hostname = instance.keys[0]
   fqdn = "#{hostname}.#{options[:environment]}.#{puke_config['domain']}"
-  type = instance['size'][options[:environment]]
+  instance_type = instance['type'][options[:environment]]
+  instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
+  #TODO: IAM instance Profile
 
   if instance['environment'] && !instance['environment'].include?(options[:environment])
     LOGGER.info("#{fqdn} is not marked for deployment in #{options[:environment]}")
     next
   end
 
-  if type.nil?
+  if instance_type.nil?
     LOGGER.error("No instance size definition for #{fqdn}")
     next
+  end
+
+  if instance['ami']
+    ami = instance['ami']
+  else
+    ami = Vominator::EC2.get_ami(puke_config,instance_type,instance['os'])
   end
 
 
