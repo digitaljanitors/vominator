@@ -1,6 +1,7 @@
 require 'yaml'
 require 'colorize'
-require "vominator/version"
+require 'highline/import'
+require 'vominator/version'
 
 module Vominator
   def self.get_config
@@ -15,17 +16,38 @@ module Vominator
     return puke_config if puke_config.kind_of?(Hash)
   end
 
+
+  def self.get_puke_variables(environment)
+    data = PUKE_CONFIG[environment]
+    return data
+  end
+
+  def self.yesno(prompt = 'Continue?', default = true)
+    a = ''
+    s = default ? '[Y/n]' : '[y/N]'
+    d = default ? 'y' : 'n'
+    until %w[y n].include? a
+      a = ask("#{prompt} #{s} ") { |q| q.limit = 1; q.case = :downcase }
+      a = d if a.length == 0
+    end
+    a == 'y'
+  end
+
   class Logger
     def self.info(message)
       puts message
     end
 
     def self.error(message)
-      puts message.red
+      puts message
       exit(1)
     end
 
     def self.success(message)
+      puts message.green
+    end
+
+    def self.warning(message)
       puts message.green
     end
   end
