@@ -6,6 +6,7 @@ require './constants.rb'
 require './aws.rb'
 require './vominator/ec2.rb'
 require './vominator/instances.rb'
+require './vominator/route53.rb'
 
 options = {}
 
@@ -61,7 +62,7 @@ OptionParser.new do |opts|
     opts.parse!
     throw Exception unless ((options.include? :environment) && (options.include? :product)) || options[:list]
   rescue
-    LOGGER.ERROR(opts)
+    LOGGER.error(opts)
   end
 end
 
@@ -77,12 +78,40 @@ if options[:list]
   exit(1)
 end
 
+#TODO: Validate Environment and Product
+LOGGER.info("Working on #{options[:product]} in #{options[:environment]}.")
+
+puke_config = Vominator.get_puke_variables(options[:environment])
+
+if options[:test]
+  LOGGER.info('Vominator is running in test mode. It will NOT make any changes.')
+else
+  LOGGER.warning('WARNING: Vominator will make changes to your environment. Please run test mode first if you are unsure.')
+  unless Vominator.yesno('Do you wish to proceed?', false)
+    exit(1)
+  end
+end
 instances = Vominator::Instances.get_instances(options[:environment], options[:product])
 
 unless instances
   LOGGER.error('Unable to load instances. Make sure the product is correctly defined for the environment you have selected.')
 end
 
+#Get ec2 connection, which is then passed to specific functions. Maybe a better way to do this?
+ec2 = Aws::EC2::Resource.new(region: puke_config['region_name'])
+
+#Get some basic metadata about our existing instances in the account. Maybe look for ways to filter this?
+existing_instances = Hash.new
+Vominator::EC2.get_instances(ec2).each do |instance|
+  existing_instances[instance.private_ip_address] = [instance.id,instance.security_groups]
+end
+
+#Get route53 connection which is then passed to specific functions. Maybe a better way to do this?
+r53 = Aws::Route53::Client.new(region: puke_config['region_name'])
+
+#Get existing DNS entries for the zone.
+route53_records = Vominator::Route53.get_records(r53, puke_config['zone'])
+
 instances.each do |instance|
-  LOGGER.info(instance)
+
 end
