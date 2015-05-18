@@ -2,11 +2,11 @@
 require 'rubygems'
 require 'optparse'
 require 'colored'
-require './constants.rb'
-require './aws.rb'
-require './vominator/ec2.rb'
-require './vominator/instances.rb'
-require './vominator/route53.rb'
+require 'vominator/constants'
+require 'vominator/aws'
+require 'vominator/ec2'
+require 'vominator/instances'
+require 'vominator/route53'
 
 options = {}
 
@@ -54,7 +54,7 @@ OptionParser.new do |opts|
   end
 
   opts.on_tail(:NONE, '-h', '--help', 'OPTIONAL: Display this screen') do
-    LOGGER.INFO(opts)
+    puts opts
     exit
   end
 
@@ -62,7 +62,8 @@ OptionParser.new do |opts|
     opts.parse!
     throw Exception unless ((options.include? :environment) && (options.include? :product)) || options[:list]
   rescue
-    LOGGER.error(opts)
+    puts opts
+    exit
   end
 end
 

@@ -1,5 +1,5 @@
 require 'yaml'
-require 'colorize'
+require 'colored'
 require 'highline/import'
 require 'vominator/version'
 

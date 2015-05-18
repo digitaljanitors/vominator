@@ -1,4 +1,4 @@
-require './vominator.rb'
+require 'vominator/vominator'
 
 LOGGER = Vominator::Logger
 

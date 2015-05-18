@@ -1,4 +1,4 @@
-require './constants.rb'
+require 'vominator/constants'
 
 module Vominator
   class Instances
