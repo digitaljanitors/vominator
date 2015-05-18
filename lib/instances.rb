@@ -129,6 +129,8 @@ instances.each do |instance|
   fqdn = "#{hostname}.#{options[:environment]}.#{puke_config['domain']}"
   instance_type = instance['type'][options[:environment]]
   instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
+  instance_security_groups = instance['security_groups'].map { |sg| "#{options[:environment]}-#{sg}"}
+
   #TODO: IAM instance Profile
 
   if instance['environment'] && !instance['environment'].include?(options[:environment])
@@ -147,6 +149,7 @@ instances.each do |instance|
     ami = Vominator::EC2.get_ami(puke_config,instance_type,instance['os'])
   end
 
+  #Check to see if the subnet exists for the instance. If not we should create it.
   subnet = "#{instance_ip.rpartition('.')[0]}.0/24"
   unless existing_subnets[subnet]
     if options[:test]
@@ -157,5 +160,37 @@ instances.each do |instance|
     end
   end
 
+  #If the instance exists, perform verification and other tasks on that instance
+  if existing_instances[instance_ip]
 
+    if options[:terminate]
+      #TODO: This would terminate an instance
+      next
+    end
+
+    if options[:rebuild]
+      #TODO: This would rebuild an instance
+      next
+    end
+
+    #TODO: Get instance object
+
+    #TODO: Instance Termination Protection logic
+
+    #TODO: Resize the instance
+
+    #TODO: Manage EIP
+
+    #TODO: Manage Source Dest Check
+
+    #TODO: Manage EBS Optimization Flag
+
+    #TODO: Manage Security Groups
+
+  else #The instance does not exist, in which case we want to create it.
+    #TODO: Instance Creation Logic
+
+    #TODO: Post Instance Creation Tasks (DNS, EIP, EBS Volumes)
+
+  end
 end
