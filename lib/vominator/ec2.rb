@@ -1,5 +1,5 @@
 require 'aws-sdk'
-require 'vominator/constants'
+require_relative 'constants'
 
 module Vominator
   class EC2

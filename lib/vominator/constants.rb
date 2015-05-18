@@ -1,4 +1,4 @@
-require 'vominator/vominator'
+require_relative 'vominator'
 
 LOGGER = Vominator::Logger
 

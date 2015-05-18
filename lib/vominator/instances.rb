@@ -1,4 +1,4 @@
-require 'vominator/constants'
+require_relative 'constants'
 
 module Vominator
   class Instances

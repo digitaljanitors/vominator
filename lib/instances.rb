@@ -1,12 +1,11 @@
 #!/usr/bin/env ruby
-require 'rubygems'
 require 'optparse'
 require 'colored'
-require 'vominator/constants'
-require 'vominator/aws'
-require 'vominator/ec2'
-require 'vominator/instances'
-require 'vominator/route53'
+require_relative 'vominator/constants'
+require_relative 'vominator/aws'
+require_relative 'vominator/ec2'
+require_relative 'vominator/instances'
+require_relative 'vominator/route53'
 
 options = {}
 

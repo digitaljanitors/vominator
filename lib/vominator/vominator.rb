@@ -1,11 +1,11 @@
 require 'yaml'
 require 'colored'
 require 'highline/import'
-require 'vominator/version'
+require_relative 'version'
 
 module Vominator
   def self.get_config
-    config_file = File.expand_path("~/.vominator.yaml")
+    config_file = ENV['VOMINATOR_CONFIG'] || File.expand_path('~/.vominator.yaml')
     vominator_config = YAML.load(File.read(config_file))
     return vominator_config if vominator_config.kind_of?(Hash)
   end

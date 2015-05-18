@@ -1,0 +1,19 @@
+---
+- sample-api-load-balancer:
+  ingress:
+    -
+      source: 0.0.0.0/0
+      ports: 80
+      protocol: tcp
+  egress:
+    -
+      destination: sample-api-server
+      ports: 8080
+      protocol: tcp
+- sample-api-server:
+  ingress:
+    -
+      source: sample-api-load-balancer
+      ports: 8080
+      protocol: tcp
+  egress:

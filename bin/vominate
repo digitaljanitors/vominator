@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 if ARGV[0] == 'instances'
-  require 'instances'
+  require_relative '../lib/instances'
 else
   puts 'Module not found. Currently supported modules are: instances'
 end

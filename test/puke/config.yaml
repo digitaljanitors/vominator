@@ -1,0 +1,27 @@
+---
+int:
+  vpc_id: vpc-bc8625d9
+  region_name: us-east-1
+  zone: Z2YU2BL04NWSK9
+  octet: '200'
+  domain: example.com
+  cloud_config_template: cloud-config-example.erb
+  linux_paravirtual_base_image: ami-280d0740
+  linux_hvm_base_image: ami-260d074e
+  windows_paravirtual_base_image: ami-78bce2lm
+  windows_hvm_base_image: ami-9231e2fa
+  chef_host: 'https://chef.int.example.com:443'
+staging:
+  vpc_id: vpc-ada2d4c8
+  region_name: us-east-1
+  zone: Z2IOTRJNNABNJ
+  octet: '203'
+  domain: example.com
+  cloud_config_template: cloud-config-example.erb
+  linux_paravirtual_base_image: ami-280d0740
+  linux_hvm_base_image: ami-260d074e
+  windows_paravirtual_base_image: ami-78bce2lm
+  windows_hvm_base_image: ami-9231e2fa
+  chef_host: 'https://chef.example.ndnops.com:443'
+  products:
+    - sample-api
