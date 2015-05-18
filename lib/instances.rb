@@ -78,10 +78,10 @@ if options[:list]
   exit(1)
 end
 
+puke_config = Vominator.get_puke_variables(options[:environment])
+
 #TODO: Validate Environment and Product
 LOGGER.info("Working on #{options[:product]} in #{options[:environment]}.")
-
-puke_config = Vominator.get_puke_variables(options[:environment])
 
 if options[:test]
   LOGGER.info('Vominator is running in test mode. It will NOT make any changes.')
@@ -99,13 +99,13 @@ else
 end
 
 unless instances
-  LOGGER.error('Unable to load instances. Make sure the product is correctly defined for the environment you have selected.')
+  LOGGER.fatal('Unable to load instances. Make sure the product is correctly defined for the environment you have selected.')
 end
 
 #Get ec2 connection, which is then passed to specific functions. Maybe a better way to do this?
 ec2 = Aws::EC2::Resource.new(region: puke_config['region_name'])
 
-#Get some basic metadata about our existing instances in the account. Maybe look for ways to filter this?
+#Get some basic metadata about our existing instances in the account. Maybe look for ways to filter this for faster API response.
 existing_instances = Hash.new
 Vominator::EC2.get_instances(ec2).each do |instance|
   existing_instances[instance.private_ip_address] = [instance.id,instance.security_groups]
@@ -119,5 +119,19 @@ route53_records = Vominator::Route53.get_records(r53, puke_config['zone'])
 
 instances.each do |instance|
   hostname = instance.keys[0]
-  puts hostname
+  fqdn = "#{hostname}.#{options[:environment]}.#{puke_config['domain']}"
+  type = instance['size'][options[:environment]]
+
+  if instance['environment'] && !instance['environment'].include?(options[:environment])
+    LOGGER.info("#{fqdn} is not marked for deployment in #{options[:environment]}")
+    next
+  end
+
+  if type.nil?
+    LOGGER.error("No instance size definition for #{fqdn}")
+    next
+  end
+
+
+
 end
