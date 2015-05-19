@@ -10,13 +10,18 @@ module Vominator
       vominator_config = YAML.load(File.read(config_file))
       return vominator_config if vominator_config.kind_of?(Hash)
     else
+      #TODO: This should instead raise an error.
       return false
     end
   end
 
   def self.get_puke_config(puke_dir)
-    config_file = "#{puke_dir}/config.yaml"
-    puke_config = YAML.load(File.read(config_file))
+    if File.exist?(puke_dir)
+      config_file = "#{puke_dir}/config.yaml"
+      puke_config = YAML.load(File.read(config_file))
+    else
+      raise("Unable to open puke configuration at #{puke_dir}")
+    end
     return puke_config if puke_config.kind_of?(Hash)
   end
 
