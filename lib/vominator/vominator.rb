@@ -4,10 +4,14 @@ require 'highline/import'
 require_relative 'version'
 
 module Vominator
-  def self.get_config
-    config_file = ENV['VOMINATOR_CONFIG'] || File.expand_path('~/.vominator.yaml')
-    vominator_config = YAML.load(File.read(config_file))
-    return vominator_config if vominator_config.kind_of?(Hash)
+  def self.get_config(file='~/.vominator.yaml')
+    config_file = ENV['VOMINATOR_CONFIG'] || File.expand_path(file)
+    if File.exist?(config_file)
+      vominator_config = YAML.load(File.read(config_file))
+      return vominator_config if vominator_config.kind_of?(Hash)
+    else
+      return false
+    end
   end
 
   def self.get_puke_config(puke_dir)
