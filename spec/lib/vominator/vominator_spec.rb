@@ -8,7 +8,7 @@ describe Vominator do
   end
 
   describe 'get_config' do
-    context 'When I pass an invalid config file' do
+    context 'when I pass an invalid config file' do
       let(:vominator_config) { Vominator.get_config('/badpath') }
 
       subject { vominator_config }
@@ -21,7 +21,7 @@ describe Vominator do
 
     end
 
-    context 'When I pass a valid config file' do
+    context 'when I pass a valid config file' do
       let(:vominator_config) { Vominator.get_config('test/vominator.yaml') }
 
       subject { vominator_config }
@@ -38,7 +38,7 @@ describe Vominator do
 
   describe 'get_puke_config' do
 
-    context 'When I pass an invalid directory' do
+    context 'when I pass an invalid directory' do
       let (:puke_config) { Vominator.get_puke_config('/badpath')}
 
       subject { puke_config }
@@ -48,7 +48,7 @@ describe Vominator do
       end
     end
 
-    context 'When I pass a valid directory' do
+    context 'when I pass a valid directory' do
       let (:puke_config) { Vominator.get_puke_config(VOMINATOR_CONFIG['configuration_path'])}
 
       subject { puke_config }
@@ -61,7 +61,7 @@ describe Vominator do
 
   describe 'get_puke_variables' do
 
-    context 'When I pass an invalid environment' do
+    context 'when I pass an invalid environment' do
       let (:puke_variables) { Vominator.get_puke_variables('invalid_environment')}
 
       subject { puke_variables }
@@ -71,13 +71,105 @@ describe Vominator do
       end
     end
 
-    context 'When I pass a valid environment' do
+    context 'when I pass a valid environment' do
       let (:puke_variables) { Vominator.get_puke_variables('test')}
 
       subject { puke_variables }
 
       it 'should not raise an error' do
         expect { puke_variables }.to_not raise_error
+      end
+    end
+  end
+
+  describe 'yesno' do
+    xit 'should prompt the user'
+
+    context 'when I say yes' do
+      xit 'should continue'
+    end
+
+    context 'when I say no' do
+      xit 'should exit'
+    end
+  end
+end
+
+describe Vominator::Logger do
+  describe 'info' do
+    context 'when I pass a log message' do
+      message = 'This is a test message'
+      let (:info_log) { Vominator::Logger.info(message) }
+
+      subject { info_log }
+
+      it 'should print the log message' do
+        expect { info_log }.to output("#{message}\n").to_stdout
+      end
+    end
+  end
+
+  describe 'test' do
+    context 'when I pass a log message' do
+      message = 'This is a test message'
+      let (:test_log) { Vominator::Logger.test(message) }
+
+      subject { test_log }
+
+      it 'should print the log message' do
+        expect { test_log }.to output("\e[36m#{message}\e[0m\n").to_stdout
+      end
+    end
+  end
+
+  describe 'error' do
+    context 'when I pass a log message' do
+      message = 'This is a test message'
+      let (:error_log) { Vominator::Logger.error(message) }
+
+      subject { error_log }
+
+      it 'should print the log message' do
+        expect { error_log }.to output("\e[31m#{message}\e[0m\n").to_stdout
+      end
+    end
+  end
+
+  describe 'fatal' do
+    context 'when I pass a log message' do
+      message = 'This is a test message'
+      let (:fatal_log) { Vominator::Logger.fatal(message) }
+
+      subject { fatal_log }
+
+      xit 'should print the log message' do
+        expect { fatal_log }.to output("#{message}\n").to_stdout
+      end
+    end
+  end
+
+  describe 'success' do
+    context 'when I pass a log message' do
+      message = 'This is a test message'
+      let (:success_log) { Vominator::Logger.success(message) }
+
+      subject { success_log }
+
+      it 'should print the log message' do
+        expect { success_log }.to output("\e[32m#{message}\e[0m\n").to_stdout
+      end
+    end
+  end
+
+  describe 'warning' do
+    context 'when I pass a log message' do
+      message = 'This is a test message'
+      let (:warning_log) { Vominator::Logger.warning(message) }
+
+      subject { warning_log }
+
+      it 'should print the log message' do
+        expect { warning_log }.to output("\e[32m#{message}\e[0m\n").to_stdout
       end
     end
   end
