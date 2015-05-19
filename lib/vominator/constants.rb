@@ -2,8 +2,8 @@ require_relative 'vominator'
 
 LOGGER = Vominator::Logger
 
-VOMINATOR_CONFIG = Vominator.get_config
-PUKE_CONFIG = Vominator.get_puke_config(VOMINATOR_CONFIG['configuration_path'])
+VOMINATOR_CONFIG ||= Vominator.get_config
+PUKE_CONFIG ||= Vominator.get_puke_config(VOMINATOR_CONFIG['configuration_path'])
 
 EC2_INSTANCE_METADATA = {
    :'t1.micro' => {:ephemeral_devices => 0, :virtualization_type => 'paravirtual'},
