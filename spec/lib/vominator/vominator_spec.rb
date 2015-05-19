@@ -2,10 +2,6 @@ require 'spec_helper'
 require 'vominator/vominator'
 
 describe Vominator do
-  before(:all) do
-    VOMINATOR_CONFIG = Vominator.get_config
-    PUKE_CONFIG = Vominator.get_puke_config(VOMINATOR_CONFIG['configuration_path'])
-  end
 
   describe 'get_config' do
     context 'when I pass an invalid config file' do
