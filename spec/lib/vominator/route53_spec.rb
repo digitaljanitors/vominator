@@ -9,9 +9,7 @@ describe Vominator::Route53 do
                                                       { name:'sample-api-1.test.example.com.', resource_records:[{ value: '10.203.41.21'}] },
                                                       { name:'sample-api-2.test.example.com.', resource_records:[{ value: '10.203.42.21'}] },
                                                       { name:'sample-api-3.test.example.com.', resource_records:[{ value: '10.203.43.21'}] }
-                                                  ],
-                                                  is_truncated: true,
-                                                  is_truncated: false
+                                                  ]
     )
   end
 
@@ -29,7 +27,7 @@ describe Vominator::Route53 do
     end
 
     context 'when I pass a valid route53 client and zone file' do
-      let(:records) { Vominator::Route53.get_records(@r53,"/hostedzone/#{@puke_variables['zone']}")}
+      let(:records) { Vominator::Route53.get_records(@r53,"/hostedzone/#{@puke_variables['zone']}", 2)}
 
       subject { records }
 
