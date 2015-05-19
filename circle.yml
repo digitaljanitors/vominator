@@ -1,5 +1,3 @@
 machine:
   ruby:
     version: 2.1.2
-  environment:
-    VOMINATOR_CONFIG: /home/ubuntu/vominator2/test/vominator.yaml
