@@ -9,7 +9,12 @@ describe Vominator do
 
       subject { vominator_config }
 
-      it { is_expected.to be false}
+      it 'should equal false' do
+        cached_vominator_config = ENV.delete('VOMINATOR_CONFIG')
+        expect(subject).to be false
+        ENV['VOMINATOR_CONFIG'] = cached_vominator_config
+      end
+
     end
 
     context 'When I pass a valid config file' do
