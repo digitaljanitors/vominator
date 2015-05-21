@@ -1,3 +1,7 @@
+unless ENV['VOMINATOR_CONFIG']
+  ENV['VOMINATOR_CONFIG']="test/vominator.yaml"
+end
+  
 if ENV['CIRCLE_ARTIFACTS']
   require 'simplecov'
   dir = File.join("..", "..", "..", ENV['CIRCLE_ARTIFACTS'], "coverage")
