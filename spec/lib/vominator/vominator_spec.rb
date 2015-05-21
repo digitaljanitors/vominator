@@ -138,8 +138,8 @@ describe Vominator::Logger do
 
       subject { fatal_log }
 
-      xit 'should print the log message' do
-        expect { fatal_log }.to output("#{message}\n").to_stdout
+      it 'should print the log message and exit' do
+        expect { fatal_log }.to exit_with_code(1).and output("\e[31m#{message}\e[0m\n").to_stdout 
       end
     end
   end
