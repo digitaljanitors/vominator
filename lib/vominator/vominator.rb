@@ -31,7 +31,7 @@ module Vominator
     return data
   end
 
-  def self.yesno(prompt = 'Continue?', default = true)
+  def self.yesno?(prompt: 'Continue?', default: true)
     a = ''
     s = default ? '[Y/n]' : '[y/N]'
     d = default ? 'y' : 'n'
