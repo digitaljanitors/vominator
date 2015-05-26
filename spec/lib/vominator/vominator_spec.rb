@@ -79,14 +79,38 @@ describe Vominator do
   end
 
   describe 'yesno' do
-    xit 'should prompt the user'
+    context 'default is yes' do
+      let (:yesno) { Vominator.yesno? }
+      context 'when I say yes' do
+        it 'should prompt the user and return true' do
+          expect($terminal).to receive(:ask).with('Continue? [Y/n] ').and_return('y')
+          expect(yesno).to be_truthy
+        end
+      end
 
-    context 'when I say yes' do
-      xit 'should continue'
+      context 'when I say no' do
+        it 'should prompt the user and return false' do
+          expect($terminal).to receive(:ask).with('Continue? [Y/n] ').and_return('n')
+          expect(yesno).to be_falsey
+        end
+      end
     end
 
-    context 'when I say no' do
-      xit 'should exit'
+    context 'default is no' do
+      let (:yesno) { Vominator.yesno?(default: false) }
+      context 'when I say yes' do
+        it 'should prompt the user and return true' do
+          expect($terminal).to receive(:ask).with('Continue? [y/N] ').and_return('y')
+          expect(yesno).to be_truthy
+        end
+      end
+
+      context 'when I say no' do
+        it 'should prompt the user and return false' do
+          expect($terminal).to receive(:ask).with('Continue? [y/N] ').and_return('n')
+          expect(yesno).to be_falsey
+        end
+      end
     end
   end
 end
@@ -138,8 +162,8 @@ describe Vominator::Logger do
 
       subject { fatal_log }
 
-      xit 'should print the log message' do
-        expect { fatal_log }.to output("#{message}\n").to_stdout
+      it 'should print the log message and exit' do
+        expect { fatal_log }.to exit_with_code(1).and output("\e[31m#{message}\e[0m\n").to_stdout 
       end
     end
   end

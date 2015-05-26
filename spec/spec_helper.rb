@@ -1,3 +1,5 @@
+Dir[File.dirname(__FILE__) + '/support/**/*.rb'].each {|file| require_relative file}
+
 unless ENV['VOMINATOR_CONFIG']
   ENV['VOMINATOR_CONFIG']="test/vominator.yaml"
 end
