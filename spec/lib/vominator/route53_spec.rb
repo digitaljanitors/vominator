@@ -4,7 +4,8 @@ require 'vominator/route53'
 describe Vominator::Route53 do
   before(:all) do
     @puke_variables = Vominator.get_puke_variables('test')
-    @r53 = Aws::Route53::Client.new(stub_responses: true)
+    Aws.config[:stub_responses] = true
+    @r53 = Aws::Route53::Client.new
     @r53.stub_responses(:list_resource_record_sets, resource_record_sets:[
                                                       { name:'sample-api-1.test.example.com.', resource_records:[{ value: '10.203.41.21'}] },
                                                       { name:'sample-api-2.test.example.com.', resource_records:[{ value: '10.203.42.21'}] },
