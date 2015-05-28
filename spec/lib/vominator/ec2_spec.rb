@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'vominator/ec2'
-require 'pry'
 
 describe Vominator::EC2 do
 
@@ -8,6 +7,12 @@ describe Vominator::EC2 do
     @puke_variables = Vominator.get_puke_variables('test')
     Aws.config[:stub_responses] = true
     @ec2_client = Aws::EC2::Client.new
+    @ec2_client.stub_responses(:describe_vpcs, :next_token => nil, :vpcs => [
+      {
+          :vpc_id => 'vpc-ada2d4c8',
+          :cidr_block => '10.203.0.0/16'
+      }
+    ])
     @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
       {
         :reservation_id => 'r-567b402e',
@@ -15,6 +20,7 @@ describe Vominator::EC2 do
         :groups => [],
         :instances => [{
           :instance_id => 'i-1968d168',
+          :vpc_id => 'vpc-ada2d4c8',
           :key_name => 'ci@example.com',
           :instance_type => 'm3.medium',
           :private_ip_address => '10.203.41.21',
@@ -32,6 +38,7 @@ describe Vominator::EC2 do
         :groups => [],
         :instances => [{
            :instance_id => 'i-1766874c',
+           :vpc_id => 'vpc-ada2d4c8',
            :key_name => 'ci@example.com',
            :instance_type => 'm3.medium',
            :private_ip_address => '10.203.42.21',
@@ -49,6 +56,7 @@ describe Vominator::EC2 do
         :groups => [],
         :instances => [{
            :instance_id => 'i-1b68d16a',
+           :vpc_id => 'vpc-ada2d4c8',
            :key_name => 'ci@example.com',
            :instance_type => 'm3.medium',
            :private_ip_address => '10.203.43.21',
@@ -59,6 +67,62 @@ describe Vominator::EC2 do
            :tags => [{:key => 'Name', :value => 'sample-api-3.test'}],
            :placement => {:availability_zone => 'us-east-1e'}
        }]
+      }
+    ])
+    @ec2_client.stub_responses(:describe_security_groups, :next_token => nil, :security_groups => [
+      {
+          :vpc_id => 'vpc-ada2d4c8',
+          :owner_id => '012329383471727',
+          :group_id => 'sg-11111',
+          :group_name => 'test-sample-api-load-balancer',
+          :description => 'test-sample-api-load-balancer',
+          :ip_permissions => [
+              {
+                  :ip_protocol => 'tcp',
+                  :from_port => 80,
+                  :to_port => 80,
+                  :ip_ranges => [
+                      {
+                          :cidr_ip => '0.0.0.0/0'
+                      }
+                  ]
+              }
+          ],
+          :ip_permissions_egress => [
+              {
+                  :ip_protocol => 'tcp',
+                  :from_port => 8080,
+                  :to_port => 8080,
+                  :user_id_group_pairs => [
+                      {
+                          :group_name => 'test-sample-api-server',
+                          :group_id => 'sg-11112'
+                      }
+                  ]
+              }
+          ]
+      },
+      {
+          :vpc_id => 'vpc-ada2d4c8',
+          :owner_id => '012329383471727',
+          :group_id => 'sg-11112',
+          :group_name => 'test-sample-api-server',
+          :description => 'test-sample-api-server',
+          :ip_permissions => [
+              {
+                  :ip_protocol => 'tcp',
+                  :from_port => 8080,
+                  :to_port => 8080,
+                  :user_id_group_pairs => [
+                      {
+                          :group_name => 'test-sample-api-load-balancer',
+                          :group_id => 'sg-11111'
+                      }
+                  ]
+              }
+          ],
+          :ip_permissions_egress => [
+          ]
       }
     ])
     @ec2 = Aws::EC2::Resource.new(client: @ec2_client)
@@ -134,7 +198,16 @@ describe Vominator::EC2 do
 
   describe 'get_security_groups' do
     context 'when I pass a valid resource and vpc_id' do
+      let (:security_groups) { Vominator::EC2.get_security_groups(@ec2, @puke_variables['vpc_id'])}
 
+      subject { security_groups }
+
+      it 'should return all security groups for the vpc' do
+        expect { security_groups }.to_not raise_error
+        expect(security_groups.count).to eq 2
+        expect(security_groups['test-sample-api-load-balancer']).to eq 'sg-11111'
+        expect(security_groups['test-sample-api-server']).to eq 'sg-11112'
+      end
     end
 
     context 'when I pass an invalid resource or vpc_id' do
