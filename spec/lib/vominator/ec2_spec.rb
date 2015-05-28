@@ -133,18 +133,82 @@ describe Vominator::EC2 do
   end
 
   describe 'get_security_groups' do
+    context 'when I pass a valid resource and vpc_id' do
 
+    end
+
+    context 'when I pass an invalid resource or vpc_id' do
+      xit 'do something'
+    end
   end
 
   describe 'get_subnets' do
+    context 'when I pass a valid resource and vpc_id' do
 
+    end
+
+    context 'when I pass an invalid resource or vpc_id' do
+      xit 'do something'
+    end
   end
 
   describe 'get_ami' do
+    context 'when I pass a valid puke_config, HVM instance type, and linux as the os' do
+      let (:ami) { Vominator::EC2.get_ami(@puke_variables, 'm3.medium', 'linux')}
 
+      subject {ami}
+
+      it 'should return a linux ami for an HVM Instance.' do
+        expect { ami }.to_not raise_error
+        expect(ami).to match('ami-260d074e')
+      end
+    end
+
+    context 'when I pass a valid puke_config, paravirtual instance type, and linux as the os' do
+      let (:ami) { Vominator::EC2.get_ami(@puke_variables, 't1.micro', 'linux')}
+
+      subject {ami}
+
+      it 'should return a linux ami for an Paravirtual Instance.' do
+        expect { ami }.to_not raise_error
+        expect(ami).to match('ami-280d0740')
+      end
+    end
+
+    context 'when I pass a valid puke_config, HVM instance type, and windows as the os' do
+      let (:ami) { Vominator::EC2.get_ami(@puke_variables, 'm3.medium', 'windows')}
+
+      subject {ami}
+
+      it 'should return a linux ami for an HVM Instance.' do
+        expect { ami }.to_not raise_error
+        expect(ami).to match('ami-9231e2fa')
+      end
+    end
+
+    context 'when I pass a valid puke_config, paravirtual instance type, and windows as the os' do
+      let (:ami) { Vominator::EC2.get_ami(@puke_variables, 't1.micro', 'windows')}
+
+      subject {ami}
+
+      it 'should return a linux ami for an Paravirtual Instance.' do
+        expect { ami }.to_not raise_error
+        expect(ami).to match('ami-78bce2lm')
+      end
+    end
+
+    context 'when I pass an invalid puke_config, instance_type or os' do
+      xit 'do something'
+    end
   end
 
   describe 'create_subnet' do
+    context 'when I pass a valid resource, subnet, az, and vpc_id' do
 
+    end
+
+    context 'when I pass an invalid resource, subnet, az, or vpc_id' do
+      xit 'do something'
+    end
   end
 end
