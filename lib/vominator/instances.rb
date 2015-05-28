@@ -2,7 +2,7 @@ require_relative 'constants'
 
 module Vominator
   class Instances
-    def self.get_instances(environment, product, filter)
+    def self.get_instances(environment, product, filter=false)
       if PUKE_CONFIG[environment]['products'].include? product
         config_file = File.expand_path("#{VOMINATOR_CONFIG['configuration_path']}/instances/#{product}.yaml")
         if filter
