@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'vominator/ec2'
-
+require 'pry'
 describe Vominator::EC2 do
 
   before(:all) do
@@ -11,6 +11,26 @@ describe Vominator::EC2 do
       {
           :vpc_id => 'vpc-ada2d4c8',
           :cidr_block => '10.203.0.0/16'
+      }
+    ])
+    @ec2_client.stub_responses(:describe_subnets, :next_token => nil, :subnets => [
+      {
+          :subnet_id => 'sub-11111',
+          :vpc_id => 'vpc-ada2d4c8',
+          :cidr_block => '10.203.41.0/24',
+          :availability_zone => 'us-east-1c'
+      },
+      {
+          :subnet_id => 'sub-11112',
+          :vpc_id => 'vpc-ada2d4c8',
+          :cidr_block => '10.203.42.0/24',
+          :availability_zone => 'us-east-1d'
+      },
+      {
+          :subnet_id => 'sub-11113',
+          :vpc_id => 'vpc-ada2d4c8',
+          :cidr_block => '10.203.43.0/24',
+          :availability_zone => 'us-east-1e'
       }
     ])
     @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
@@ -217,7 +237,17 @@ describe Vominator::EC2 do
 
   describe 'get_subnets' do
     context 'when I pass a valid resource and vpc_id' do
+      let (:subnets) { Vominator::EC2.get_subnets(@ec2, @puke_variables['vpc_id'])}
 
+      subject { subnets }
+
+      it 'should return all subnets for the vpc' do
+        expect { subnets }.to_not raise_error
+        expect(subnets.count).to eq 3
+        expect(subnets['10.203.41.0/24'].id).to match 'sub-11111'
+        expect(subnets['10.203.42.0/24'].id).to match 'sub-11112'
+        expect(subnets['10.203.43.0/24'].id).to match 'sub-11113'
+      end
     end
 
     context 'when I pass an invalid resource or vpc_id' do
@@ -277,7 +307,14 @@ describe Vominator::EC2 do
 
   describe 'create_subnet' do
     context 'when I pass a valid resource, subnet, az, and vpc_id' do
+      let (:subnet) { Vominator::EC2.create_subnet(@ec2, '10.203.21.0/24', 'us-east-1a', @puke_variables['vpc_id'])}
 
+      subject { subnet }
+
+      xit 'should return a subnet object' do
+        expect { subnet }.to_not raise_error
+        # TODO: How do we verify that this actually worked?
+      end
     end
 
     context 'when I pass an invalid resource, subnet, az, or vpc_id' do
