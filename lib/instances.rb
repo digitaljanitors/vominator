@@ -86,7 +86,7 @@ if options[:test]
   LOGGER.info('Vominator is running in test mode. It will NOT make any changes.')
 else
   LOGGER.warning('WARNING: Vominator will make changes to your environment. Please run test mode first if you are unsure.')
-  unless Vominator.yesno('Do you wish to proceed?', false)
+  unless Vominator.yesno?(prompt: 'Do you wish to proceed?', default: false)
     exit(1)
   end
 end
