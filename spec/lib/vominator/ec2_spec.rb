@@ -216,6 +216,24 @@ describe Vominator::EC2 do
     end
   end
 
+  describe 'get_instance' do
+    context 'when I pass a valid ec2 resource and a valid instance ID' do
+      let (:instance) { Vominator::EC2.get_instance(@ec2, 'i-1968d168')}
+
+      subject { instance }
+
+      it 'should return an ec2 instance object' do
+        expect {instance}.to_not raise_error
+        expect(instance.id).to match 'i-1968d168'
+        expect(instance.private_ip_address).to match '10.203.41.21'
+      end
+    end
+
+    context 'when I pass an invalid ec2 resource or invalid instance ID.' do
+      xit 'do something'
+    end
+  end
+
   describe 'get_security_groups' do
     context 'when I pass a valid resource and vpc_id' do
       let (:security_groups) { Vominator::EC2.get_security_groups(@ec2, @puke_variables['vpc_id'])}

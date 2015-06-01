@@ -15,6 +15,10 @@ module Vominator
       resource.instances
     end
 
+    def self.get_instance(resource, instance_id)
+      return resource.instances(filters: [{name: 'instance-id', values: [instance_id]}]).first
+    end
+
     def self.get_security_groups(resource, vpc_id)
       security_groups = Hash.new
       resource.vpcs(filters: [{name: 'vpc-id', values: [vpc_id]}]).first.security_groups.each do |security_group|

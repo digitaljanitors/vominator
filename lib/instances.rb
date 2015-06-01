@@ -6,7 +6,6 @@ require_relative 'vominator/aws'
 require_relative 'vominator/ec2'
 require_relative 'vominator/instances'
 require_relative 'vominator/route53'
-
 options = {}
 
 OptionParser.new do |opts|
@@ -163,6 +162,8 @@ instances.each do |instance|
   #If the instance exists, perform verification and other tasks on that instance
   if existing_instances[instance_ip]
 
+    ec2_instance = Vominator::EC2.get_instance(ec2, existing_instances[instance_ip][0])
+
     if options[:terminate]
       #TODO: This would terminate an instance
       next
@@ -172,8 +173,6 @@ instances.each do |instance|
       #TODO: This would rebuild an instance
       next
     end
-
-    #TODO: Get instance object
 
     #TODO: Instance Termination Protection logic
 
