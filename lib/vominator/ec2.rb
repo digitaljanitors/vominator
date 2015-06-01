@@ -50,5 +50,14 @@ module Vominator
       subnet = resource.vpcs(filters: [{name: 'vpc-id', values: [vpc_id]}]).first.create_subnet(:cidr_block => subnet, :availability_zone => az)
       return subnet
     end
+
+    def self.get_termination_protection(client, instance_id)
+      return client.describe_instance_attribute(:instance_id => instance_id, :attribute => 'disableApiTermination').disable_api_termination.value
+    end
+
+    def self.set_termination_protection(client, instance_id, state)
+      client.modify_instance_attribute(:instance_id => instance_id, :disable_api_termination => { :value => state })
+      return client.describe_instance_attribute(:instance_id => instance_id, :attribute => 'disableApiTermination').disable_api_termination.value
+    end
   end
 end

@@ -103,6 +103,7 @@ end
 
 #Get ec2 connection, which is then passed to specific functions. Maybe a better way to do this?
 ec2 = Aws::EC2::Resource.new(region: puke_config['region_name'])
+ec2_client = Aws::EC2::Client.new(region: puke_config['region_name'])
 
 #Get some basic metadata about our existing instances in the account. Maybe look for ways to filter this for faster API response.
 existing_instances = Hash.new
@@ -174,7 +175,24 @@ instances.each do |instance|
       next
     end
 
-    #TODO: Instance Termination Protection logic
+    if options[:disable_termination_protection]
+      if options[:test]
+        LOGGER.test("Would disable instance termination protection for #{fqdn}")
+      else
+        Vominator::EC2.set_termination_protection(ec2_client, ec2_instance.id, false)
+        LOGGER.success("Disabled instance termination protection for #{fqdn}")
+      end
+    else
+      unless Vominator::EC2.get_termination_protection(ec2_client, ec2_instance.id)
+        if options[:test]
+          LOGGER.test("Would enable instance termination protection for #{fqdn}")
+        else
+          Vominator::EC2.set_termination_protection(ec2_client, ec2_instance.id, true)
+          LOGGER.success("Enabled instance termination protection for #{fqdn}")
+        end
+      end
+    end
+
 
     #TODO: Resize the instance
 
