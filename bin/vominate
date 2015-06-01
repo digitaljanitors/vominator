@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+# TODO: this should be case statements
 if ARGV[0] == 'instances'
   require_relative '../lib/instances'
 else

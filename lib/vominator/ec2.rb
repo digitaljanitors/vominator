@@ -12,6 +12,7 @@ module Vominator
     end
 
     def self.get_instances(resource)
+      # filter this to just what we need.
       resource.instances
     end
 
