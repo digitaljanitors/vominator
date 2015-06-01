@@ -216,6 +216,24 @@ describe Vominator::EC2 do
     end
   end
 
+  describe 'get_instance' do
+    context 'when I pass a valid ec2 resource and a valid instance ID' do
+      let (:instance) { Vominator::EC2.get_instance(@ec2, 'i-1968d168')}
+
+      subject { instance }
+
+      it 'should return an ec2 instance object' do
+        expect {instance}.to_not raise_error
+        expect(instance.id).to match 'i-1968d168'
+        expect(instance.private_ip_address).to match '10.203.41.21'
+      end
+    end
+
+    context 'when I pass an invalid ec2 resource or invalid instance ID.' do
+      xit 'do something'
+    end
+  end
+
   describe 'get_security_groups' do
     context 'when I pass a valid resource and vpc_id' do
       let (:security_groups) { Vominator::EC2.get_security_groups(@ec2, @puke_variables['vpc_id'])}
@@ -318,6 +336,66 @@ describe Vominator::EC2 do
     end
 
     context 'when I pass an invalid resource, subnet, az, or vpc_id' do
+      xit 'do something'
+    end
+  end
+
+  describe 'get_termination_protection' do
+    context 'when I pass a valid client, instance_id and the instance is protected from termination' do
+      let (:termination_protection) { Vominator::EC2.get_termination_protection(@ec2_client, 'i-1968d168')}
+
+      subject { termination_protection }
+
+      it 'should be protected from termination' do
+        @ec2_client.stub_responses(:describe_instance_attribute, :instance_id => 'i-1968d168', :disable_api_termination => { :value => true })
+        expect { termination_protection}.to_not raise_error
+        expect(termination_protection).to be true
+      end
+    end
+
+    context 'when I pass a valid client, instance_id, and the instance is not protected from termination' do
+      let (:termination_protection) { Vominator::EC2.get_termination_protection(@ec2_client, 'i-1766874c')}
+
+      subject { termination_protection }
+
+      it 'should not be protected from termination' do
+        @ec2_client.stub_responses(:describe_instance_attribute, :instance_id => 'i-1766874c', :disable_api_termination => { :value => false })
+        expect { termination_protection}.to_not raise_error
+        expect(termination_protection).to be false
+      end
+    end
+
+    context 'when I pass an invalid client, or instance_id' do
+      xit 'do something'
+    end
+  end
+
+  describe 'set_termination_protection' do
+    context 'When I pass a valid client, instance_id and set the instance protection to true' do
+      let (:termination_protection) { Vominator::EC2.set_termination_protection(@ec2_client, 'i-1968d168', true)}
+
+      subject { termination_protection }
+
+      it 'should be enabled' do
+        @ec2_client.stub_responses(:describe_instance_attribute, :instance_id => 'i-1968d168', :disable_api_termination => { :value => true })
+        expect { termination_protection }.to_not raise_error
+        expect(termination_protection).to be true
+      end
+    end
+
+    context 'When I pass a valid client, instance_id and set the instance protection to false' do
+      let (:termination_protection) { Vominator::EC2.set_termination_protection(@ec2_client, 'i-1968d168', false)}
+
+      subject { termination_protection }
+
+      it 'should not be enabled' do
+        @ec2_client.stub_responses(:describe_instance_attribute, :instance_id => 'i-1968d168', :disable_api_termination => { :value => false })
+        expect { termination_protection }.to_not raise_error
+        expect(termination_protection).to be false
+      end
+    end
+
+    context 'when I pass an invalid client, instance_id or state' do
       xit 'do something'
     end
   end

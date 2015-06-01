@@ -12,7 +12,12 @@ module Vominator
     end
 
     def self.get_instances(resource)
+      # filter this to just what we need.
       resource.instances
+    end
+
+    def self.get_instance(resource, instance_id)
+      return resource.instances(filters: [{name: 'instance-id', values: [instance_id]}]).first
     end
 
     def self.get_security_groups(resource, vpc_id)
@@ -45,6 +50,15 @@ module Vominator
     def self.create_subnet(resource, subnet, az, vpc_id)
       subnet = resource.vpcs(filters: [{name: 'vpc-id', values: [vpc_id]}]).first.create_subnet(:cidr_block => subnet, :availability_zone => az)
       return subnet
+    end
+
+    def self.get_termination_protection(client, instance_id)
+      return client.describe_instance_attribute(:instance_id => instance_id, :attribute => 'disableApiTermination').disable_api_termination.value
+    end
+
+    def self.set_termination_protection(client, instance_id, state)
+      client.modify_instance_attribute(:instance_id => instance_id, :disable_api_termination => { :value => state })
+      return client.describe_instance_attribute(:instance_id => instance_id, :attribute => 'disableApiTermination').disable_api_termination.value
     end
   end
 end

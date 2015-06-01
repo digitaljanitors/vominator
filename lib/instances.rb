@@ -6,7 +6,6 @@ require_relative 'vominator/aws'
 require_relative 'vominator/ec2'
 require_relative 'vominator/instances'
 require_relative 'vominator/route53'
-
 options = {}
 
 OptionParser.new do |opts|
@@ -87,7 +86,7 @@ if options[:test]
   LOGGER.info('Vominator is running in test mode. It will NOT make any changes.')
 else
   LOGGER.warning('WARNING: Vominator will make changes to your environment. Please run test mode first if you are unsure.')
-  unless Vominator.yesno('Do you wish to proceed?', false)
+  unless Vominator.yesno?(prompt: 'Do you wish to proceed?', default: false)
     exit(1)
   end
 end
@@ -104,6 +103,7 @@ end
 
 #Get ec2 connection, which is then passed to specific functions. Maybe a better way to do this?
 ec2 = Aws::EC2::Resource.new(region: puke_config['region_name'])
+ec2_client = Aws::EC2::Client.new(region: puke_config['region_name'])
 
 #Get some basic metadata about our existing instances in the account. Maybe look for ways to filter this for faster API response.
 existing_instances = Hash.new
@@ -163,6 +163,8 @@ instances.each do |instance|
   #If the instance exists, perform verification and other tasks on that instance
   if existing_instances[instance_ip]
 
+    ec2_instance = Vominator::EC2.get_instance(ec2, existing_instances[instance_ip][0])
+
     if options[:terminate]
       #TODO: This would terminate an instance
       next
@@ -173,9 +175,24 @@ instances.each do |instance|
       next
     end
 
-    #TODO: Get instance object
+    if options[:disable_termination_protection]
+      if options[:test]
+        LOGGER.test("Would disable instance termination protection for #{fqdn}")
+      else
+        Vominator::EC2.set_termination_protection(ec2_client, ec2_instance.id, false)
+        LOGGER.success("Disabled instance termination protection for #{fqdn}")
+      end
+    else
+      unless Vominator::EC2.get_termination_protection(ec2_client, ec2_instance.id)
+        if options[:test]
+          LOGGER.test("Would enable instance termination protection for #{fqdn}")
+        else
+          Vominator::EC2.set_termination_protection(ec2_client, ec2_instance.id, true)
+          LOGGER.success("Enabled instance termination protection for #{fqdn}")
+        end
+      end
+    end
 
-    #TODO: Instance Termination Protection logic
 
     #TODO: Resize the instance
 
