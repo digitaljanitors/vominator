@@ -207,7 +207,32 @@ instances.each do |instance|
     end
 
     #TODO: Manage EIP
-
+    #require 'pry'
+    #binding.pry
+    if instance['eip'] && ec2_instance.public_ip_address.nil?
+      if options[:test]
+        LOGGER.test("Would create and associate a public IP for #{fqdn}")
+      else
+        LOGGER.info("Associating a public IP for #{fqdn}")
+        eip = Vominator::EC2.assign_public_ip(ec2_client, ec2_instance.id)
+        if eip
+          LOGGER.success("Successfully associated #{eip} to #{fqdn}")
+        else
+          LOGGER.fatal("An error occured associating a public IP for #{fqdn}")
+        end
+      end
+    elsif !instance['eip'] && ec2_instance.public_ip_address
+      if options[:test]
+        LOGGER.test("Would remove the elastic IP for #{fqdn}")
+      else
+        LOGGER.info("Removing public IP from #{fqdn}")
+        if Vominator::EC2.remove_public_ip(ec2_client, ec2_instance.id)
+          LOGGER.success("Successfully removed the public IP for #{fqdn}")
+        else
+          LOGGER.fatal("Failed to remove the public IP for #{fqdn}")
+        end
+      end
+    end
     #TODO: Manage Source Dest Check
 
     #TODO: Manage EBS Optimization Flag

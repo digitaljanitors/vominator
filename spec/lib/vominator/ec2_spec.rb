@@ -465,4 +465,40 @@ describe Vominator::EC2 do
       xit 'do something'
     end
   end
+
+  describe 'assign_public_ip' do
+    context 'when I pass a valid resource and instance_id' do
+      let (:public_ip) { Vominator::EC2.assign_public_ip(@ec2_client, 'i-1968d168' )}
+
+      subject { public_ip }
+
+      it 'should assign the instance an public ip' do
+        @ec2_client.stub_responses(:allocate_address, :public_ip => '84.84.84.84')
+        expect { public_ip }.to_not raise_error
+        expect(public_ip).to match '84.84.84.84'
+      end
+    end
+
+    context 'when i pass an invalid resource and instance_id' do
+      xit 'do something'
+    end
+  end
+
+  describe 'remove_public_ip' do
+    context 'when I pass a valid resource and instance_id' do
+      let (:removed_public_ip) { Vominator::EC2.remove_public_ip(@ec2_client, 'i-1968d168' )}
+
+      subject { removed_public_ip }
+
+      it 'should remove the instance an public ip' do
+        @ec2_client.stub_responses(:describe_addresses, :addresses => [{:instance_id => 'i-1968d168', :public_ip => '84.84.84.84'}])
+        expect { removed_public_ip }.to_not raise_error
+        expect(removed_public_ip).to be true
+      end
+    end
+
+    context 'when i pass an invalid resource and instance_id' do
+      xit 'do something'
+    end
+  end
 end

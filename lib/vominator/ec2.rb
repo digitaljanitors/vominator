@@ -85,5 +85,31 @@ module Vominator
       end
       return Vominator::EC2.get_instance(resource,instance_id).instance_type
     end
+
+    def self.assign_public_ip(client, instance_id)
+      eip = client.allocate_address(:domain => 'vpc')
+      tries ||= 3
+      begin
+        sleep(0.25)
+        association = client.associate_address(:instance_id => instance_id, :allocation_id => eip.allocation_id)
+      rescue Aws::EC2::Errors::InvalidAllocationIDNotFound
+        retry unless (tries -= 1).zero?
+      end
+
+      if association
+        return eip.public_ip
+      else
+        return nil
+      end
+    end
+
+    def self.remove_public_ip(client, instance_id)
+      allocation_id = client.describe_addresses(filters: [{name: 'instance-id', values: [instance_id]}]).first['addresses'].first['association_id']
+      if client.disassociate_address(:association_id => allocation_id)
+        return true
+      else
+        return false
+      end
+    end
   end
 end
