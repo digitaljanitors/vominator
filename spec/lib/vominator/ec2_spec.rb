@@ -48,6 +48,7 @@ describe Vominator::EC2 do
           :architecture => 'x86_64',
           :source_dest_check => false,
           :ebs_optimized => false,
+          :state => { :code => 16, :name => 'running'},
           :tags => [{:key => 'Name', :value => 'sample-api-1.test'}],
           :placement => {:availability_zone => 'us-east-1c'}
           }]
@@ -66,6 +67,7 @@ describe Vominator::EC2 do
            :architecture => 'x86_64',
            :source_dest_check => false,
            :ebs_optimized => false,
+           :state => { :code => 16, :name => 'running'},
            :tags => [{:key => 'Name', :value => 'sample-api-2.test'}],
            :placement => {:availability_zone => 'us-east-1d'}
        }]
@@ -84,6 +86,7 @@ describe Vominator::EC2 do
            :architecture => 'x86_64',
            :source_dest_check => false,
            :ebs_optimized => false,
+           :state => { :code => 16, :name => 'running'},
            :tags => [{:key => 'Name', :value => 'sample-api-3.test'}],
            :placement => {:availability_zone => 'us-east-1e'}
        }]
@@ -396,6 +399,69 @@ describe Vominator::EC2 do
     end
 
     context 'when I pass an invalid client, instance_id or state' do
+      xit 'do something'
+    end
+  end
+  describe 'get_instance_state' do
+    context 'when I pass a valid resource and instance_id' do
+      let (:instance_state) { Vominator::EC2.get_instance_state(@ec2, 'i-1968d168') }
+
+      subject { instance_state }
+
+      it 'should return running when the instance is running' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+          {
+              :reservation_id => 'r-567b402e',
+              :instances => [{
+                                 :instance_id => 'i-1968d168',
+                                 :instance_type => 'm3.large',
+                                 :state => { :code => 64, :name => 'running'},
+                             }]
+          }])
+
+        expect { instance_state }.to_not raise_error
+        expect(instance_state).to match 'running'
+      end
+
+      it 'should return stopped when the instance is stopped' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+          {
+              :reservation_id => 'r-567b402e',
+              :instances => [{
+                                 :instance_id => 'i-1968d168',
+                                 :instance_type => 'm3.large',
+                                 :state => { :code => 64, :name => 'stopped'},
+                             }]
+          }])
+
+        expect { instance_state }.to_not raise_error
+        expect(instance_state).to match 'stopped'
+      end
+    end
+  end
+
+  describe 'set_instance_type' do
+    context 'when I pass a valid resource, instance_id, and instance_type' do
+      let (:instance_type) { Vominator::EC2.set_instance_type(@ec2, 'i-1968d168', 'm3.large', 'sample-api-1.test.example.com')}
+
+      subject { instance_type }
+
+      it 'should resize the instance' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+          {
+              :reservation_id => 'r-567b402e',
+              :instances => [{
+                                 :instance_id => 'i-1968d168',
+                                 :instance_type => 'm3.large',
+                                 :state => { :code => 64, :name => 'stopped'},
+                             }]
+          }])
+        expect { instance_type }.to_not raise_error
+        expect(instance_type).to match 'm3.large'
+      end
+    end
+
+    context 'when I pass an invalid resource, instance_id, or instance_type' do
       xit 'do something'
     end
   end

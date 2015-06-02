@@ -60,5 +60,30 @@ module Vominator
       client.modify_instance_attribute(:instance_id => instance_id, :disable_api_termination => { :value => state })
       return client.describe_instance_attribute(:instance_id => instance_id, :attribute => 'disableApiTermination').disable_api_termination.value
     end
+
+    def self.get_instance_state(resource, instance_id)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+
+      return instance.state.name
+    end
+
+    def self.set_instance_type(resource, instance_id, type, fqdn)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+      instance.stop
+
+      # TODO: Add a timed break?
+      sleep 5 until Vominator::EC2.get_instance_state(resource, instance_id) == 'stopped'
+      instance.modify_attribute(:attribute => 'instanceType', :value => type)
+
+      # TODO: We should add in a sleep (with a timed break) and verify the instance goes back to running
+      begin
+        instance.start
+      rescue Aws::EC2::Errors::Unsupported
+        LOGGER.warning("Disabling EBS Optimization for #{fqdn} because #{type} does not support this functionality")
+        instance.ebs_optimized = false
+        instance.start
+      end
+      return Vominator::EC2.get_instance(resource,instance_id).instance_type
+    end
   end
 end

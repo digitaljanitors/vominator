@@ -193,8 +193,18 @@ instances.each do |instance|
       end
     end
 
-
-    #TODO: Resize the instance
+    if ec2_instance.instance_type != instance_type
+      if options[:test]
+        LOGGER.test("Would resize #{fqdn} from an #{ec2_instance.instance_type} to an #{instance_type}")
+      else
+        LOGGER.info("Resizing #{fqdn} from an #{ec2_instance.instance_type} to an #{instance_type}")
+        if Vominator::EC2.set_instance_type(ec2, ec2_instance.id, instance_type, fqdn) == instance_type
+          LOGGER.success("Succesfully resized #{fqdn} to #{instance_type}")
+        else
+          LOGGER.fatal("Failed to resize #{fqdn} to #{instance_type}")
+        end
+      end
+    end
 
     #TODO: Manage EIP
 
