@@ -206,9 +206,6 @@ instances.each do |instance|
       end
     end
 
-    #TODO: Manage EIP
-    #require 'pry'
-    #binding.pry
     if instance['eip'] && ec2_instance.public_ip_address.nil?
       if options[:test]
         LOGGER.test("Would create and associate a public IP for #{fqdn}")
