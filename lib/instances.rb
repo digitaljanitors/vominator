@@ -6,6 +6,7 @@ require_relative 'vominator/aws'
 require_relative 'vominator/ec2'
 require_relative 'vominator/instances'
 require_relative 'vominator/route53'
+
 options = {}
 
 OptionParser.new do |opts|
@@ -65,6 +66,13 @@ OptionParser.new do |opts|
   end
 end
 
+TEST = options[:test]
+def test?(message)
+  LOGGER.test(message) if TEST
+  TEST
+end
+
+
 if options[:list]
   data = {}
   PUKE_CONFIG.keys.each do |environment|
@@ -82,9 +90,8 @@ puke_config = Vominator.get_puke_variables(options[:environment])
 #TODO: Validate Environment and Product
 LOGGER.info("Working on #{options[:product]} in #{options[:environment]}.")
 
-if options[:test]
-  LOGGER.info('Vominator is running in test mode. It will NOT make any changes.')
-else
+
+unless test?('Vominator is running in test mode. It will NOT make any changes.')
   LOGGER.warning('WARNING: Vominator will make changes to your environment. Please run test mode first if you are unsure.')
   unless Vominator.yesno?(prompt: 'Do you wish to proceed?', default: false)
     exit(1)
@@ -152,9 +159,7 @@ instances.each do |instance|
   #Check to see if the subnet exists for the instance. If not we should create it.
   subnet = "#{instance_ip.rpartition('.')[0]}.0/24"
   unless existing_subnets[subnet]
-    if options[:test]
-      LOGGER.test("Would create a subnet for #{subnet} in #{instance['az']}")
-    else
+    unless test?("Would create a subnet for #{subnet} in #{instance['az']}")
       existing_subnets[subnet] = Vominator::EC2.create_subnet(ec2, subnet, instance['az'], puke_config['vpc_id'])
       LOGGER.success("Created #{subnet} in #{instance['az']} for #{fqdn}")
     end
@@ -176,17 +181,13 @@ instances.each do |instance|
     end
 
     if options[:disable_termination_protection]
-      if options[:test]
-        LOGGER.test("Would disable instance termination protection for #{fqdn}")
-      else
+      unless test?("Would disable instance termination protection for #{fqdn}")
         Vominator::EC2.set_termination_protection(ec2_client, ec2_instance.id, false)
         LOGGER.success("Disabled instance termination protection for #{fqdn}")
       end
     else
       unless Vominator::EC2.get_termination_protection(ec2_client, ec2_instance.id)
-        if options[:test]
-          LOGGER.test("Would enable instance termination protection for #{fqdn}")
-        else
+        unless test?("Would enable instance termination protection for #{fqdn}")
           Vominator::EC2.set_termination_protection(ec2_client, ec2_instance.id, true)
           LOGGER.success("Enabled instance termination protection for #{fqdn}")
         end
@@ -194,9 +195,7 @@ instances.each do |instance|
     end
 
     if ec2_instance.instance_type != instance_type
-      if options[:test]
-        LOGGER.test("Would resize #{fqdn} from an #{ec2_instance.instance_type} to an #{instance_type}")
-      else
+      unless test?("Would resize #{fqdn} from an #{ec2_instance.instance_type} to an #{instance_type}")
         LOGGER.info("Resizing #{fqdn} from an #{ec2_instance.instance_type} to an #{instance_type}")
         if Vominator::EC2.set_instance_type(ec2, ec2_instance.id, instance_type, fqdn) == instance_type
           LOGGER.success("Succesfully resized #{fqdn} to #{instance_type}")
@@ -207,9 +206,7 @@ instances.each do |instance|
     end
 
     if instance['eip'] && ec2_instance.public_ip_address.nil?
-      if options[:test]
-        LOGGER.test("Would create and associate a public IP for #{fqdn}")
-      else
+      unless test?("Would create and associate a public IP for #{fqdn}")
         LOGGER.info("Associating a public IP for #{fqdn}")
         eip = Vominator::EC2.assign_public_ip(ec2_client, ec2_instance.id)
         if eip
@@ -219,9 +216,7 @@ instances.each do |instance|
         end
       end
     elsif !instance['eip'] && ec2_instance.public_ip_address
-      if options[:test]
-        LOGGER.test("Would remove the elastic IP for #{fqdn}")
-      else
+      unless test?("Would remove the elastic IP for #{fqdn}")
         LOGGER.info("Removing public IP from #{fqdn}")
         if Vominator::EC2.remove_public_ip(ec2_client, ec2_instance.id)
           LOGGER.success("Successfully removed the public IP for #{fqdn}")
