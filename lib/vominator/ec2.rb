@@ -36,13 +36,13 @@ module Vominator
       return subnets
     end
 
-    def self.get_ami(puke_config, instance_type, os)
+    def self.get_ami(puke_config, instance_type, family)
       if Vominator::EC2.get_virt_type(instance_type) == 'hvm'
-        ami = puke_config['linux_hvm_base_image'] if os == 'linux'
-        ami = puke_config['windows_hvm_base_image'] if os == 'windows'
+        ami = puke_config['linux_hvm_base_image'] if family == 'linux'
+        ami = puke_config['windows_hvm_base_image'] if family == 'windows'
       else
-        ami = puke_config['linux_paravirtual_base_image'] if os == 'linux'
-        ami = puke_config['windows_paravirtual_base_image'] if os == 'windows'
+        ami = puke_config['linux_paravirtual_base_image'] if family == 'linux'
+        ami = puke_config['windows_paravirtual_base_image'] if family == 'windows'
       end
       return ami
     end
@@ -59,6 +59,57 @@ module Vominator
     def self.set_termination_protection(client, instance_id, state)
       client.modify_instance_attribute(:instance_id => instance_id, :disable_api_termination => { :value => state })
       return client.describe_instance_attribute(:instance_id => instance_id, :attribute => 'disableApiTermination').disable_api_termination.value
+    end
+
+    def self.get_instance_state(resource, instance_id)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+
+      return instance.state.name
+    end
+
+    def self.set_instance_type(resource, instance_id, type, fqdn)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+      instance.stop
+
+      # TODO: Add a timed break?
+      sleep 5 until Vominator::EC2.get_instance_state(resource, instance_id) == 'stopped'
+      instance.modify_attribute(:attribute => 'instanceType', :value => type)
+
+      # TODO: We should add in a sleep (with a timed break) and verify the instance goes back to running
+      begin
+        instance.start
+      rescue Aws::EC2::Errors::Unsupported
+        LOGGER.warning("Disabling EBS Optimization for #{fqdn} because #{type} does not support this functionality")
+        instance.ebs_optimized = false
+        instance.start
+      end
+      return Vominator::EC2.get_instance(resource,instance_id).instance_type
+    end
+
+    def self.assign_public_ip(client, instance_id)
+      eip = client.allocate_address(:domain => 'vpc')
+      tries ||= 3
+      begin
+        sleep(0.25)
+        association = client.associate_address(:instance_id => instance_id, :allocation_id => eip.allocation_id)
+      rescue Aws::EC2::Errors::InvalidAllocationIDNotFound
+        retry unless (tries -= 1).zero?
+      end
+
+      if association
+        return eip.public_ip
+      else
+        return nil
+      end
+    end
+
+    def self.remove_public_ip(client, instance_id)
+      allocation_id = client.describe_addresses(filters: [{name: 'instance-id', values: [instance_id]}]).first['addresses'].first['association_id']
+      if client.disassociate_address(:association_id => allocation_id)
+        return true
+      else
+        return false
+      end
     end
   end
 end

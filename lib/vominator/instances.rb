@@ -4,7 +4,7 @@ module Vominator
   class Instances
     def self.get_instances(environment, product, filter=false)
       if PUKE_CONFIG[environment]['products'].include? product
-        config_file = File.expand_path("#{VOMINATOR_CONFIG['configuration_path']}/instances/#{product}.yaml")
+        config_file = File.expand_path("#{VOMINATOR_CONFIG['configuration_path']}/products/#{product}/instances.yaml")
         if filter
           instances = Array.new
           YAML.load(File.read(config_file)).each do |instance|
