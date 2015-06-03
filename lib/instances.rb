@@ -153,7 +153,7 @@ instances.each do |instance|
   if instance['ami']
     ami = instance['ami']
   else
-    ami = Vominator::EC2.get_ami(puke_config,instance_type,instance['os'])
+    ami = Vominator::EC2.get_ami(puke_config,instance_type,instance['family'])
   end
 
   #Check to see if the subnet exists for the instance. If not we should create it.

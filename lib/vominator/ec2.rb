@@ -36,13 +36,13 @@ module Vominator
       return subnets
     end
 
-    def self.get_ami(puke_config, instance_type, os)
+    def self.get_ami(puke_config, instance_type, family)
       if Vominator::EC2.get_virt_type(instance_type) == 'hvm'
-        ami = puke_config['linux_hvm_base_image'] if os == 'linux'
-        ami = puke_config['windows_hvm_base_image'] if os == 'windows'
+        ami = puke_config['linux_hvm_base_image'] if family == 'linux'
+        ami = puke_config['windows_hvm_base_image'] if family == 'windows'
       else
-        ami = puke_config['linux_paravirtual_base_image'] if os == 'linux'
-        ami = puke_config['windows_paravirtual_base_image'] if os == 'windows'
+        ami = puke_config['linux_paravirtual_base_image'] if family == 'linux'
+        ami = puke_config['windows_paravirtual_base_image'] if family == 'windows'
       end
       return ami
     end

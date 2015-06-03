@@ -4,7 +4,7 @@
     prod: m3.medium
     staging: m3.medium
   ami: ami-123123
-  os: linux
+  family: linux
   ip: 10.OCTET.41.21
   az: us-east-1c
   environment:
@@ -17,7 +17,7 @@
   type:
     prod: m3.medium
     staging: m3.medium
-  os: linux
+  family: linux
   ip: 10.OCTET.42.21
   az: us-east-1d
   security_groups:
@@ -28,7 +28,7 @@
   type:
     prod: m3.medium
     staging: m3.medium
-  os: linux
+  family: linux
   ip: 10.OCTET.43.21
   az: us-east-1e
   security_groups:
