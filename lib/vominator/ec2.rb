@@ -14,7 +14,7 @@ module Vominator
     def self.get_instances(resource)
       instances = Hash.new
       resource.instances.each do |instance|
-        instances[instance.private_ip_address] = {:instance_id => instance.id, :security_groups => instance.security_groups}
+        instances[instance.private_ip_address] = {:instance_id => instance.id, :security_groups => instance.security_groups.map { |sg| sg.group_name}}
       end
       return instances
     end

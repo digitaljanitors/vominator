@@ -208,7 +208,7 @@ describe Vominator::EC2 do
         expect {instances}.to_not raise_error
         expect(instances.count).to eq 3
         expect(instances['10.203.41.21'][:instance_id]).to match 'i-1968d168'
-        expect(instances['10.203.41.21'][:security_groups].first[:group_name]).to include('test-sample-api-server')
+        expect(instances['10.203.41.21'][:security_groups].first).to include('test-sample-api-server')
       end
     end
 
