@@ -111,5 +111,12 @@ module Vominator
         return false
       end
     end
+
+    def self.set_source_dest_check(resource, instance_id, state)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+      if instance.modify_attribute(:source_dest_check => {:value => state})
+        return state
+      end
+    end
   end
 end
