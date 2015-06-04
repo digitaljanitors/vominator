@@ -133,7 +133,8 @@ instances.each do |instance|
   fqdn = "#{hostname}.#{options[:environment]}.#{puke_config['domain']}"
   instance_type = instance['type'][options[:environment]]
   instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
-  instance_security_groups = instance['security_groups'].map { |sg| "#{options[:environment]}-#{sg}"}
+  instance_security_groups = instance['security_groups'].map { |sg| "#{options[:environment]}-#{sg}"}.uniq.sort
+  ec2_instance_security_groups = ec2_instances[instance_ip][:security_groups].uniq.sort
 
   #TODO: IAM instance Profile
 
@@ -169,11 +170,13 @@ instances.each do |instance|
 
     if options[:terminate]
       #TODO: This would terminate an instance
+      #TODO: Should include deleting chef client and node, as well as route53 record.
       next
     end
 
     if options[:rebuild]
       #TODO: This would rebuild an instance
+      #TODO: Should include deleting chef client and node
       next
     end
 
@@ -227,7 +230,25 @@ instances.each do |instance|
     #TODO: Manage EBS Optimization Flag
 
     #TODO: Manage Security Groups
+    unless ec2_instance_security_groups == instance_security_groups
+      LOGGER.info("Security group mismatch detected for #{fqdn}")
+      sg_missing = instance_security_groups - ec2_instance_security_groups
+      sg_undefined = ec2_instance_security_groups - instance_security_groups
 
+      if sg_missing.count > 0
+        unless test?("Would add #{sg_missing.join(', ')} to #{fqdn}")
+          #Update security groups
+        end
+      end
+
+      if sg_undefined.count > 0
+        unless test?("Would remove #{sg_undefined.join(', ')} from #{fqdn}")
+          if Vominator.yesno?(prompt: 'Is it safe to remove these groups?', default: false)
+            #Update security groups
+          end
+        end
+      end
+    end
   else #The instance does not exist, in which case we want to create it.
     #TODO: Instance Creation Logic
 
