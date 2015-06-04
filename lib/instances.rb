@@ -113,10 +113,7 @@ ec2 = Aws::EC2::Resource.new(region: puke_config['region_name'])
 ec2_client = Aws::EC2::Client.new(region: puke_config['region_name'])
 
 #Get some basic metadata about our existing instances in the account. Maybe look for ways to filter this for faster API response.
-existing_instances = Hash.new
-Vominator::EC2.get_instances(ec2).each do |instance|
-  existing_instances[instance.private_ip_address] = [instance.id,instance.security_groups]
-end
+ec2_instances = Vominator::EC2.get_instances(ec2)
 
 #Get route53 connection which is then passed to specific functions. Maybe a better way to do this?
 r53 = Aws::Route53::Client.new(region: puke_config['region_name'])
@@ -166,9 +163,9 @@ instances.each do |instance|
   end
 
   #If the instance exists, perform verification and other tasks on that instance
-  if existing_instances[instance_ip]
+  if ec2_instances[instance_ip]
 
-    ec2_instance = Vominator::EC2.get_instance(ec2, existing_instances[instance_ip][0])
+    ec2_instance = Vominator::EC2.get_instance(ec2, ec2_instances[instance_ip][:instance_id])
 
     if options[:terminate]
       #TODO: This would terminate an instance
