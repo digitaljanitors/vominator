@@ -111,5 +111,25 @@ module Vominator
         return false
       end
     end
+
+    def self.set_ebs_optimized(resource, instance_id, state, fqdn)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+      instance.stop
+
+      # TODO: Add a timed break?
+      sleep 5 until Vominator::EC2.get_instance_state(resource, instance_id) == 'stopped'
+
+      # TODO: We should add in a sleep (with a timed break) and verify the instance goes back to running
+      begin
+        instance.modify_attribute(:ebs_optimized => {:value => state})
+        instance.start
+        return state
+      rescue Aws::EC2::Errors::Unsupported
+        LOGGER.error("#{fqdn} does not support setting EBS Optimization to #{state} as this is not supported for #{instance.instance_type}")
+        instance.modify_attribute(:ebs_optimized => {:value => false})
+        instance.start
+        return instance.ebs_optimized
+      end
+    end
   end
 end

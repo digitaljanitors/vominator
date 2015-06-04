@@ -501,4 +501,52 @@ describe Vominator::EC2 do
       xit 'do something'
     end
   end
+
+  describe 'set_ebs_optimized' do
+    context 'when I pass a valid resource, instance_id and enable EBS optimization' do
+      let (:ebs_optimized) { Vominator::EC2.set_ebs_optimized(@ec2, 'i-1968d168', true, 'sample-api-1.example.com' )}
+
+      subject { ebs_optimized }
+
+      it 'should remove the instance an public ip' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+          {
+              :reservation_id => 'r-567b402e',
+              :instances => [{
+                                 :instance_id => 'i-1968d168',
+                                 :instance_type => 'm3.large',
+                                 :ebs_optimized => true,
+                                 :state => { :code => 64, :name => 'stopped'}
+                             }]
+          }])
+        expect { ebs_optimized }.to_not raise_error
+        expect(ebs_optimized).to be true
+      end
+    end
+
+    context 'when I pass a valid resource, instance_id and disabling EBS optimization' do
+      let (:ebs_optimized) { Vominator::EC2.set_ebs_optimized(@ec2, 'i-1968d168', false, 'sample-api-1.example.com' )}
+
+      subject { ebs_optimized }
+
+      it 'should remove the instance an public ip' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+          {
+              :reservation_id => 'r-567b402e',
+              :instances => [{
+                                 :instance_id => 'i-1968d168',
+                                 :instance_type => 'm3.large',
+                                 :ebs_optimized => false,
+                                 :state => { :code => 64, :name => 'stopped'}
+                             }]
+          }])
+        expect { ebs_optimized }.to_not raise_error
+        expect(ebs_optimized).to be false
+      end
+    end
+
+    context 'when i pass an invalid resource, instance_id, or state' do
+      xit 'do something'
+    end
+  end
 end

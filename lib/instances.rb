@@ -137,6 +137,7 @@ instances.each do |instance|
   instance_type = instance['type'][options[:environment]]
   instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
   instance_security_groups = instance['security_groups'].map { |sg| "#{options[:environment]}-#{sg}"}
+  ebs_optimized = instance['ebs_optimized'].nil? ? false : instance['ebs_optimized']
 
   #TODO: IAM instance Profile
 
@@ -227,8 +228,15 @@ instances.each do |instance|
     end
     #TODO: Manage Source Dest Check
 
-    #TODO: Manage EBS Optimization Flag
-
+    unless ec2_instance.ebs_optimized == ebs_optimized
+      unless test?("Would set EBS optimization to #{ebs_optimized}")
+        if Vominator::EC2.set_ebs_optimized(ec2, ec2_instance.id, ebs_optimized, fqdn) == ebs_optimized
+          LOGGER.success("Succesfully set EBS optimization to #{ebs_optimized} for #{fqdn}")
+        else
+          LOGGER.fatal("Failed to set EBS optimization to #{ebs_optimized} for #{fqdn}")
+        end
+      end
+    end
     #TODO: Manage Security Groups
 
   else #The instance does not exist, in which case we want to create it.
