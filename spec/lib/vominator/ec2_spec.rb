@@ -50,7 +50,8 @@ describe Vominator::EC2 do
           :ebs_optimized => false,
           :state => { :code => 16, :name => 'running'},
           :tags => [{:key => 'Name', :value => 'sample-api-1.test'}],
-          :placement => {:availability_zone => 'us-east-1c'}
+          :placement => {:availability_zone => 'us-east-1c'},
+          :security_groups => [{:group_name => 'test-sample-api-server', :group_id => 'sg-11111'}]
           }]
       },
       {
@@ -206,7 +207,8 @@ describe Vominator::EC2 do
       it 'should return ec2 instances' do
         expect {instances}.to_not raise_error
         expect(instances.count).to eq 3
-        # TODO: Maybe something that checks we got back the expected instances?
+        expect(instances['10.203.41.21'][:instance_id]).to match 'i-1968d168'
+        expect(instances['10.203.41.21'][:security_groups].first[:group_name]).to include('test-sample-api-server')
       end
     end
 

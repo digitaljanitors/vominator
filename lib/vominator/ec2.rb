@@ -12,8 +12,11 @@ module Vominator
     end
 
     def self.get_instances(resource)
-      # filter this to just what we need.
-      resource.instances
+      instances = Hash.new
+      resource.instances.each do |instance|
+        instances[instance.private_ip_address] = {:instance_id => instance.id, :security_groups => instance.security_groups}
+      end
+      return instances
     end
 
     def self.get_instance(resource, instance_id)
