@@ -139,8 +139,6 @@ instances.each do |instance|
 
   LOGGER.info("Working on #{fqdn}")
 
-  #TODO: IAM instance Profile
-
   if instance['environment'] && !instance['environment'].include?(options[:environment])
     LOGGER.info("#{fqdn} is not marked for deployment in #{options[:environment]}")
     next
@@ -181,6 +179,7 @@ instances.each do |instance|
     if options[:rebuild]
       #TODO: This would rebuild an instance
       #TODO: Should include deleting chef client and node
+      #TODO: Remove instance from ec2_instances array and retry this loop thus recreating the instance
       next
     end
 
@@ -281,11 +280,22 @@ instances.each do |instance|
         end
       end
     end
+
+    #TODO: Manage EBS Volumes
   else #The instance does not exist, in which case we want to create it.
+    #TODO: IAM instance Profile
 
-    #TODO: Instance Creation Logic
+    #TODO: Cloud Config
 
-    #TODO: Post Instance Creation Tasks (DNS, EIP, EBS Volumes)
+    #TODO: Setup ephemeral devices
+
+    #TODO: Instance the instance
+
+    #TODO: Add the instance Name, and Environment tags
+
+    #TODO: Create DNS Entry
+
+    #TODO: Put instance into ec2_instances array and break to the beginning of the loop. This keeps things DRY.
 
   end
 end
