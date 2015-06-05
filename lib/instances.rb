@@ -137,6 +137,9 @@ instances.each do |instance|
   instance_type = instance['type'][options[:environment]]
   instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
   instance_security_groups = instance['security_groups'].map { |sg| "#{options[:environment]}-#{sg}"}
+  source_dest_check = instance['source_dest_check'].nil? ? true : instance['source_dest_check']
+
+  LOGGER.info("Working on #{fqdn}")
 
   #TODO: IAM instance Profile
 
@@ -225,7 +228,16 @@ instances.each do |instance|
         end
       end
     end
-    #TODO: Manage Source Dest Check
+
+    unless ec2_instance.source_dest_check == source_dest_check
+      unless test?("Would set the source_dest_check to #{source_dest_check}")
+        if Vominator::EC2.set_source_dest_check(ec2, ec2_instance.id, source_dest_check) == source_dest_check
+          LOGGER.success("Succesfully set source destination check to #{source_dest_check} for #{fqdn}")
+        else
+          LOGGER.fatal("Failed to set source destination check to #{source_dest_check} for #{fqdn}")
+        end
+      end
+    end
 
     #TODO: Manage EBS Optimization Flag
 
