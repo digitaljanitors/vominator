@@ -114,5 +114,15 @@ module Vominator
         return false
       end
     end
+
+    def self.set_security_groups(resource, instance_id, security_groups, vpc_security_groups, append=true)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+      if append
+        security_groups = security_groups + instance.security_groups.map {|sg| sg[:group_name]}
+      end
+      group_ids = security_groups.map { |sg| vpc_security_groups[sg] }
+      instance.modify_attribute(:groups => group_ids.compact)
+      return Vominator::EC2.get_instance(resource,instance_id).security_groups.map {|sg| sg[:group_name]}
+    end
   end
 end

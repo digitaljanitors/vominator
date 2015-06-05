@@ -126,7 +126,7 @@ route53_records = Vominator::Route53.get_records(r53, puke_config['zone'])
 existing_subnets = Vominator::EC2.get_subnets(ec2, puke_config['vpc_id'])
 
 #Get existing Security Groups for the VPC
-existing_security_groups = Vominator::EC2.get_security_groups(ec2, puke_config['vpc_id'])
+vpc_security_groups = Vominator::EC2.get_security_groups(ec2, puke_config['vpc_id'])
 
 instances.each do |instance|
   hostname = instance.keys[0]
@@ -237,14 +237,25 @@ instances.each do |instance|
 
       if sg_missing.count > 0
         unless test?("Would add #{sg_missing.join(', ')} to #{fqdn}")
-          #Update security groups
+          LOGGER.info("#{fqdn} is missing the following security groups: #{sg_missing.join(', ')}")
+          updated_groups = instance_security_groups - Vominator::EC2.set_security_groups(ec2, ec2_instance.id, instance_security_groups, vpc_security_groups)
+          if updated_groups.count > 0
+            LOGGER.fatal "Failed to set #{updated_groups.join(', ')} for #{fqdn}"
+          else
+            LOGGER.success "Succesfully set security groups for #{fqdn}"
+          end
         end
       end
 
       if sg_undefined.count > 0
         unless test?("Would remove #{sg_undefined.join(', ')} from #{fqdn}")
+          LOGGER.warning("#{fqdn} has the following extra security groups: #{sg_undefined.join(', ')}. You will be prompted to remove these.")
           if Vominator.yesno?(prompt: 'Is it safe to remove these groups?', default: false)
-            #Update security groups
+            if Vominator::EC2.set_security_groups(ec2, ec2_instance.id, instance_security_groups, vpc_security_groups, false) == instance_security_groups
+              LOGGER.success("Succesfully updated the security groups for #{fqdn}")
+            else
+              LOGGER.fatal("Failed to remove security groups from #{fqdn}")
+            end
           end
         end
       end
