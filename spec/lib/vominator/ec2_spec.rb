@@ -504,6 +504,101 @@ describe Vominator::EC2 do
     end
   end
 
+  describe 'set_source_dest_check' do
+    context 'when I pass a valid resource, instance_id and enable source destination checking' do
+      let (:source_dest_check) { Vominator::EC2.set_source_dest_check(@ec2, 'i-1968d168', true )}
+
+      subject { source_dest_check }
+
+      it 'should remove the instance an public ip' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+                                                          {
+                                                              :reservation_id => 'r-567b402e',
+                                                              :instances => [{
+                                                                                 :instance_id => 'i-1968d168',
+                                                                                 :instance_type => 'm3.large',
+                                                                                 :source_dest_check => true
+                                                                             }]
+                                                          }])
+
+        expect { source_dest_check }.to_not raise_error
+        expect(source_dest_check).to be true
+      end
+    end
+
+    context 'when I pass a valid resource, instance_id and disabling source destination checking' do
+      let (:source_dest_check) { Vominator::EC2.set_source_dest_check(@ec2, 'i-1968d168', false )}
+
+      subject { source_dest_check }
+
+      it 'should remove the instance an public ip' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+                                                          {
+                                                              :reservation_id => 'r-567b402e',
+                                                              :instances => [{
+                                                                                 :instance_id => 'i-1968d168',
+                                                                                 :instance_type => 'm3.large',
+                                                                                 :source_dest_check => false
+                                                                             }]
+                                                          }])
+        expect { source_dest_check }.to_not raise_error
+        expect(source_dest_check).to be false
+      end
+    end
+
+    context 'when i pass an invalid resource, instance_id, or state' do
+      xit 'do something'
+    end
+  end
+
+  describe 'set_ebs_optimized' do
+    context 'when I pass a valid resource, instance_id and enable EBS optimization' do
+      let (:ebs_optimized) { Vominator::EC2.set_ebs_optimized(@ec2, 'i-1968d168', true, 'sample-api-1.example.com' )}
+
+      subject { ebs_optimized }
+
+      it 'should remove the instance an public ip' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+                                                          {
+                                                              :reservation_id => 'r-567b402e',
+                                                              :instances => [{
+                                                                                 :instance_id => 'i-1968d168',
+                                                                                 :instance_type => 'm3.large',
+                                                                                 :ebs_optimized => true,
+                                                                                 :state => { :code => 64, :name => 'stopped'}
+                                                                             }]
+                                                          }])
+        expect { ebs_optimized }.to_not raise_error
+        expect(ebs_optimized).to be true
+      end
+    end
+
+    context 'when I pass a valid resource, instance_id and disabling EBS optimization' do
+      let (:ebs_optimized) { Vominator::EC2.set_ebs_optimized(@ec2, 'i-1968d168', false, 'sample-api-1.example.com' )}
+
+      subject { ebs_optimized }
+
+      it 'should remove the instance an public ip' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+                                                          {
+                                                              :reservation_id => 'r-567b402e',
+                                                              :instances => [{
+                                                                                 :instance_id => 'i-1968d168',
+                                                                                 :instance_type => 'm3.large',
+                                                                                 :ebs_optimized => false,
+                                                                                 :state => { :code => 64, :name => 'stopped'}
+                                                                             }]
+                                                          }])
+        expect { ebs_optimized }.to_not raise_error
+        expect(ebs_optimized).to be false
+      end
+    end
+
+    context 'when i pass an invalid resource, instance_id, or state' do
+      xit 'do something'
+    end
+  end
+
   describe 'set_security_groups' do
     context 'when I pass a valid resource, instance_id, security_groups, and vpc_security_groups' do
       vpc_security_groups = Hash.new
@@ -514,13 +609,13 @@ describe Vominator::EC2 do
 
       it 'should append test-security-group to the instances list of security groups' do
         @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
-          {
-              :reservation_id => 'r-567b402e',
-              :instances => [{
-                                 :instance_id => 'i-1968d168',
-                                 :security_groups => [{ :group_name => 'test-sample-api-server', :group_id => 'sg-11111'}, { :group_name => 'test-security-group', :group_id => 'sg-11113'}]
-                             }]
-          }])
+                                                          {
+                                                              :reservation_id => 'r-567b402e',
+                                                              :instances => [{
+                                                                                 :instance_id => 'i-1968d168',
+                                                                                 :security_groups => [{ :group_name => 'test-sample-api-server', :group_id => 'sg-11111'}, { :group_name => 'test-security-group', :group_id => 'sg-11113'}]
+                                                                             }]
+                                                          }])
         expect { security_groups }.to_not raise_error
         expect(security_groups.count).to eq 2
         expect(security_groups).to include 'test-sample-api-server'
@@ -537,13 +632,13 @@ describe Vominator::EC2 do
 
       it 'should append test-security-group to the instances list of security groups' do
         @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
-          {
-              :reservation_id => 'r-567b402e',
-              :instances => [{
-                                 :instance_id => 'i-1968d168',
-                                 :security_groups => [{ :group_name => 'test-security-group', :group_id => 'sg-11113'}]
-                             }]
-          }])
+                                                          {
+                                                              :reservation_id => 'r-567b402e',
+                                                              :instances => [{
+                                                                                 :instance_id => 'i-1968d168',
+                                                                                 :security_groups => [{ :group_name => 'test-security-group', :group_id => 'sg-11113'}]
+                                                                             }]
+                                                          }])
         expect { security_groups }.to_not raise_error
         expect(security_groups.count).to eq 1
         expect(security_groups).to include 'test-security-group'

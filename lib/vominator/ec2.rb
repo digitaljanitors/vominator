@@ -115,6 +115,33 @@ module Vominator
       end
     end
 
+    def self.set_ebs_optimized(resource, instance_id, state, fqdn)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+      instance.stop
+
+      # TODO: Add a timed break?
+      sleep 5 until Vominator::EC2.get_instance_state(resource, instance_id) == 'stopped'
+
+      # TODO: We should add in a sleep (with a timed break) and verify the instance goes back to running
+      begin
+        instance.modify_attribute(:ebs_optimized => {:value => state})
+        instance.start
+        return state
+      rescue Aws::EC2::Errors::Unsupported
+        LOGGER.error("#{fqdn} does not support setting EBS Optimization to #{state} as this is not supported for #{instance.instance_type}")
+        instance.modify_attribute(:ebs_optimized => {:value => false})
+        instance.start
+        return instance.ebs_optimized
+      end
+    end
+
+    def self.set_source_dest_check(resource, instance_id, state)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+      if instance.modify_attribute(:source_dest_check => {:value => state})
+        return state
+      end
+    end
+
     def self.set_security_groups(resource, instance_id, security_groups, vpc_security_groups, append=true)
       instance = Vominator::EC2.get_instance(resource,instance_id)
       if append
