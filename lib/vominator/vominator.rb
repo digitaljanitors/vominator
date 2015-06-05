@@ -65,7 +65,7 @@ module Vominator
     end
 
     def self.warning(message)
-      puts message.green
+      puts message.yellow
     end
   end
 end

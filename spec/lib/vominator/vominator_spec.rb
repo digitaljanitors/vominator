@@ -189,7 +189,7 @@ describe Vominator::Logger do
       subject { warning_log }
 
       it 'should print the log message' do
-        expect { warning_log }.to output("\e[32m#{message}\e[0m\n").to_stdout
+        expect { warning_log }.to output("\e[33m#{message}\e[0m\n").to_stdout
       end
     end
   end

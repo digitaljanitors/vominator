@@ -113,10 +113,7 @@ ec2 = Aws::EC2::Resource.new(region: puke_config['region_name'])
 ec2_client = Aws::EC2::Client.new(region: puke_config['region_name'])
 
 #Get some basic metadata about our existing instances in the account. Maybe look for ways to filter this for faster API response.
-existing_instances = Hash.new
-Vominator::EC2.get_instances(ec2).each do |instance|
-  existing_instances[instance.private_ip_address] = [instance.id,instance.security_groups]
-end
+ec2_instances = Vominator::EC2.get_instances(ec2)
 
 #Get route53 connection which is then passed to specific functions. Maybe a better way to do this?
 r53 = Aws::Route53::Client.new(region: puke_config['region_name'])
@@ -129,14 +126,15 @@ route53_records = Vominator::Route53.get_records(r53, puke_config['zone'])
 existing_subnets = Vominator::EC2.get_subnets(ec2, puke_config['vpc_id'])
 
 #Get existing Security Groups for the VPC
-existing_security_groups = Vominator::EC2.get_security_groups(ec2, puke_config['vpc_id'])
+vpc_security_groups = Vominator::EC2.get_security_groups(ec2, puke_config['vpc_id'])
 
 instances.each do |instance|
   hostname = instance.keys[0]
   fqdn = "#{hostname}.#{options[:environment]}.#{puke_config['domain']}"
   instance_type = instance['type'][options[:environment]]
   instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
-  instance_security_groups = instance['security_groups'].map { |sg| "#{options[:environment]}-#{sg}"}
+  instance_security_groups = instance['security_groups'].map { |sg| "#{options[:environment]}-#{sg}"}.uniq.sort
+  ec2_instance_security_groups = ec2_instances[instance_ip][:security_groups].uniq.sort
   ebs_optimized = instance['ebs_optimized'].nil? ? false : instance['ebs_optimized']
   source_dest_check = instance['source_dest_check'].nil? ? true : instance['source_dest_check']
 
@@ -170,17 +168,19 @@ instances.each do |instance|
   end
 
   #If the instance exists, perform verification and other tasks on that instance
-  if existing_instances[instance_ip]
+  if ec2_instances[instance_ip]
 
-    ec2_instance = Vominator::EC2.get_instance(ec2, existing_instances[instance_ip][0])
+    ec2_instance = Vominator::EC2.get_instance(ec2, ec2_instances[instance_ip][:instance_id])
 
     if options[:terminate]
       #TODO: This would terminate an instance
+      #TODO: Should include deleting chef client and node, as well as route53 record.
       next
     end
 
     if options[:rebuild]
       #TODO: This would rebuild an instance
+      #TODO: Should include deleting chef client and node
       next
     end
 
@@ -249,8 +249,38 @@ instances.each do |instance|
         end
       end
     end
-    #TODO: Manage Security Groups
 
+
+    unless ec2_instance_security_groups == instance_security_groups
+      LOGGER.info("Security group mismatch detected for #{fqdn}")
+      sg_missing = instance_security_groups - ec2_instance_security_groups
+      sg_undefined = ec2_instance_security_groups - instance_security_groups
+
+      if sg_missing.count > 0
+        unless test?("Would add #{sg_missing.join(', ')} to #{fqdn}")
+          LOGGER.info("#{fqdn} is missing the following security groups: #{sg_missing.join(', ')}")
+          updated_groups = instance_security_groups - Vominator::EC2.set_security_groups(ec2, ec2_instance.id, instance_security_groups, vpc_security_groups)
+          if updated_groups.count > 0
+            LOGGER.fatal "Failed to set #{updated_groups.join(', ')} for #{fqdn}"
+          else
+            LOGGER.success "Succesfully set security groups for #{fqdn}"
+          end
+        end
+      end
+
+      if sg_undefined.count > 0
+        unless test?("Would remove #{sg_undefined.join(', ')} from #{fqdn}")
+          LOGGER.warning("#{fqdn} has the following extra security groups: #{sg_undefined.join(', ')}. You will be prompted to remove these.")
+          if Vominator.yesno?(prompt: 'Is it safe to remove these groups?', default: false)
+            if Vominator::EC2.set_security_groups(ec2, ec2_instance.id, instance_security_groups, vpc_security_groups, false) == instance_security_groups
+              LOGGER.success("Succesfully updated the security groups for #{fqdn}")
+            else
+              LOGGER.fatal("Failed to remove security groups from #{fqdn}")
+            end
+          end
+        end
+      end
+    end
   else #The instance does not exist, in which case we want to create it.
     #TODO: Instance Creation Logic
 

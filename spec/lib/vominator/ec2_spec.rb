@@ -50,7 +50,8 @@ describe Vominator::EC2 do
           :ebs_optimized => false,
           :state => { :code => 16, :name => 'running'},
           :tags => [{:key => 'Name', :value => 'sample-api-1.test'}],
-          :placement => {:availability_zone => 'us-east-1c'}
+          :placement => {:availability_zone => 'us-east-1c'},
+          :security_groups => [{:group_name => 'test-sample-api-server', :group_id => 'sg-11111'}]
           }]
       },
       {
@@ -206,7 +207,8 @@ describe Vominator::EC2 do
       it 'should return ec2 instances' do
         expect {instances}.to_not raise_error
         expect(instances.count).to eq 3
-        # TODO: Maybe something that checks we got back the expected instances?
+        expect(instances['10.203.41.21'][:instance_id]).to match 'i-1968d168'
+        expect(instances['10.203.41.21'][:security_groups].first).to include('test-sample-api-server')
       end
     end
 
@@ -594,6 +596,53 @@ describe Vominator::EC2 do
 
     context 'when i pass an invalid resource, instance_id, or state' do
       xit 'do something'
+    end
+  end
+
+  describe 'set_security_groups' do
+    context 'when I pass a valid resource, instance_id, security_groups, and vpc_security_groups' do
+      vpc_security_groups = Hash.new
+      vpc_security_groups['test-sample-api-server'] = 'sg-11111'
+      let (:security_groups) { Vominator::EC2.set_security_groups(@ec2, 'i-1968d168', ['test-security-group'], vpc_security_groups)}
+
+      subject { security_groups }
+
+      it 'should append test-security-group to the instances list of security groups' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+                                                          {
+                                                              :reservation_id => 'r-567b402e',
+                                                              :instances => [{
+                                                                                 :instance_id => 'i-1968d168',
+                                                                                 :security_groups => [{ :group_name => 'test-sample-api-server', :group_id => 'sg-11111'}, { :group_name => 'test-security-group', :group_id => 'sg-11113'}]
+                                                                             }]
+                                                          }])
+        expect { security_groups }.to_not raise_error
+        expect(security_groups.count).to eq 2
+        expect(security_groups).to include 'test-sample-api-server'
+        expect(security_groups).to include 'test-security-group'
+      end
+    end
+
+    context 'when I pass a valid resource, instance_id, security_groups, vpc_security_groups, and set append to false' do
+      vpc_security_groups = Hash.new
+      vpc_security_groups['test-sample-api-server'] = 'sg-11111'
+      let (:security_groups) { Vominator::EC2.set_security_groups(@ec2, 'i-1968d168', ['test-security-group'], vpc_security_groups, false)}
+
+      subject { security_groups }
+
+      it 'should append test-security-group to the instances list of security groups' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+                                                          {
+                                                              :reservation_id => 'r-567b402e',
+                                                              :instances => [{
+                                                                                 :instance_id => 'i-1968d168',
+                                                                                 :security_groups => [{ :group_name => 'test-security-group', :group_id => 'sg-11113'}]
+                                                                             }]
+                                                          }])
+        expect { security_groups }.to_not raise_error
+        expect(security_groups.count).to eq 1
+        expect(security_groups).to include 'test-security-group'
+      end
     end
   end
 end
