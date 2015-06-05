@@ -151,5 +151,45 @@ module Vominator
       instance.modify_attribute(:groups => group_ids.compact)
       return Vominator::EC2.get_instance(resource,instance_id).security_groups.map {|sg| sg[:group_name]}
     end
+
+    def self.get_ebs_volume(resource, ebs_volume_id)
+      return resource.volumes(filters: [{name: 'volume-id', values: [ebs_volume_id]}]).first
+    end
+
+    def self.get_instance_ebs_volumes(resource, instance_id)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+      return instance.block_device_mappings.map {|vol| vol[:device_name]}
+    end
+
+    def self.add_ebs_volume(resource, instance_id, volume_type, volume_size, mount_point, iops=false, encrypted=false)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+      availability_zone = instance.placement[:availability_zone]
+
+      case volume_type
+      when 'magnetic'
+        volume = resource.create_volume(:availability_zone => availability_zone, :volume_type => 'standard', :size => volume_size, :encrypted => encrypted)
+      when 'gp'
+        volume = resource.create_volume(:availability_zone => availability_zone, :volume_type => 'gp2', :size => volume_size, :encrypted => encrypted)
+      when 'piops'
+        iops = volume_size * 15 unless iops
+        volume = resource.create_volume(:availability_zone => availability_zone, :volume_type => 'io1', :size => volume_size, :iops => iops, :encrypted => encrypted)
+      else
+        volume = nil
+        LOGGER.fatal("#{volume_type} is unsupported")
+      end
+      LOGGER.info("Waiting for #{volume.id} to be provisioned and become available")
+
+      sleep 3 until Vominator::EC2.get_ebs_volume(resource, volume.id).state == 'available'
+
+      LOGGER.info("Attaching #{volume.id} to the instance and waiting for it to be attached.")
+      instance.attach_volume(:device => mount_point, :volume_id => volume.id)
+      sleep 3 until Vominator::EC2.get_ebs_volume(resource, volume.id).state == 'in-use'
+
+      return volume
+    end
+
+    def self.remove_ebs_volume()
+
+    end
   end
 end
