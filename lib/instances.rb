@@ -134,7 +134,6 @@ instances.each do |instance|
   instance_type = instance['type'][options[:environment]]
   instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
   instance_security_groups = instance['security_groups'].map { |sg| "#{options[:environment]}-#{sg}"}.uniq.sort
-  ec2_instance_security_groups = ec2_instances[instance_ip][:security_groups].uniq.sort
   ebs_optimized = instance['ebs_optimized'].nil? ? false : instance['ebs_optimized']
   source_dest_check = instance['source_dest_check'].nil? ? true : instance['source_dest_check']
 
@@ -171,6 +170,7 @@ instances.each do |instance|
   if ec2_instances[instance_ip]
 
     ec2_instance = Vominator::EC2.get_instance(ec2, ec2_instances[instance_ip][:instance_id])
+    ec2_instance_security_groups = ec2_instances[instance_ip][:security_groups].uniq.sort
 
     if options[:terminate]
       #TODO: This would terminate an instance
@@ -282,6 +282,7 @@ instances.each do |instance|
       end
     end
   else #The instance does not exist, in which case we want to create it.
+
     #TODO: Instance Creation Logic
 
     #TODO: Post Instance Creation Tasks (DNS, EIP, EBS Volumes)
