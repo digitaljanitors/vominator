@@ -298,8 +298,7 @@ instances.each do |instance|
 
     #TODO: IAM instance Profile
 
-    #TODO: Cloud Config
-
+    cloud_config = Vominator::Instances.generate_cloud_config(hostname, options[:environment], instance['family'], instance['roles'], instance['recipes'])
     #TODO: Setup ephemeral devices
 
     #TODO: Instance the instance

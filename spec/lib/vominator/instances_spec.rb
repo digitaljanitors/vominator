@@ -75,4 +75,22 @@ describe Vominator::Instances do
     end
 
   end
+
+  describe 'generate_cloud_config' do
+    context 'when I pass a valid hostname, environment, family, roles, and recipes' do
+      let (:cloud_config) { Vominator::Instances.generate_cloud_config('sample-api-1', 'test', 'linux', ['role1'], ['recipe1'] )}
+
+      subject { cloud_config }
+      it 'should return a rendered cloud_config' do
+        expect {cloud_config}.to_not raise_error
+        expect(cloud_config).to include('sample-api-1.test')
+        expect(cloud_config).to include('role1')
+        expect(cloud_config).to include('recipe1')
+      end
+    end
+
+    context 'when I pass invalid parameters' do
+      xit 'it should do something'
+    end
+  end
 end
