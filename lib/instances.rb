@@ -310,7 +310,6 @@ instances.each do |instance|
       else
         LOGGER.fatal("Failed to create #{fqdn}")
       end
-      #TODO: Fix block device mapping
     end
   end
 end

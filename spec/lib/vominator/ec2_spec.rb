@@ -730,4 +730,32 @@ describe Vominator::EC2 do
       xit 'do something'
     end
   end
+
+  describe 'create_instance' do
+    context 'when I pass a valid resource, hostname, environment, ami, subnet id, instance type, keypair name, private ip, az and security groups' do
+      let (:instance) { Vominator::EC2.create_instance(@ec2, 'sample-api-1','test','ami-111111','sub-11111','m3.medium','test@example.com','10.203.41.21','us-east-1c',['sg-11111'],'',false,nil)}
+
+      subject { instance }
+
+      it 'should create an instance' do
+        @ec2_client.stub_responses(:run_instances, :next_token => nil, :instances => [
+          {
+             :instance_id => 'i-1968d168',
+             :state => { :code => 64, :name => 'running'}
+          }])
+
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+          {
+              :reservation_id => 'r-567b402e',
+              :instances => [{
+                                 :instance_id => 'i-1968d168',
+                                 :state => { :code => 64, :name => 'running'}
+                             }]
+          }])
+
+        expect { instance }.to_not raise_error
+        expect(instance.id).to match 'i-1968d168'
+      end
+    end
+  end
 end
