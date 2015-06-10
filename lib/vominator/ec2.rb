@@ -187,9 +187,5 @@ module Vominator
 
       return volume
     end
-
-    def self.remove_ebs_volume()
-
-    end
   end
 end

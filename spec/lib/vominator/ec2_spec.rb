@@ -712,8 +712,4 @@ describe Vominator::EC2 do
       end
     end
   end
-
-  describe 'remove_ebs_volume' do
-
-  end
 end
