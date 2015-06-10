@@ -25,6 +25,9 @@ module Vominator
     return puke_config if puke_config.kind_of?(Hash)
   end
 
+  def self.get_key_pair(vominator_config)
+    return vominator_config['key_pair_name']
+  end
 
   def self.get_puke_variables(environment)
     data = PUKE_CONFIG[environment]
