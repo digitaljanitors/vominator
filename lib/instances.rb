@@ -137,6 +137,7 @@ instances.each do |instance|
   ebs_optimized = instance['ebs_optimized'].nil? ? false : instance['ebs_optimized']
   source_dest_check = instance['source_dest_check'].nil? ? true : instance['source_dest_check']
   instance_ebs_volumes = instance['ebs'].nil? ? [] : instance['ebs']
+  key_name = Vominator.get_key_pair(VOMINATOR_CONFIG)
 
   LOGGER.info("Working on #{fqdn}")
 
@@ -294,18 +295,22 @@ instances.each do |instance|
       end
     end
 
+    #manage DNS entry
+
   else #The instance does not exist, in which case we want to create it.
-    cloud_config = Vominator::Instances.generate_cloud_config(hostname, options[:environment], instance['family'], instance['roles'], instance['recipes'])
-    ephemeral_devices = Vominator::EC2.get_ephemeral_devices(instance_type)
-    #TODO: IAM instance Profile
+    user_data = Vominator::Instances.generate_cloud_config(hostname, options[:environment], instance['family'], instance['roles'], instance['recipes'])
+    security_group_ids = instance_security_groups.map {|sg| vpc_security_groups[sg] }
 
-    #TODO: create the instance
-
-    #TODO: Add the instance Name, and Environment tags
-
-    #TODO: Create DNS Entry
-
-    #TODO: Put instance into ec2_instances array and break to the beginning of the loop. This keeps things DRY.
-
+    unless test?("Would create #{fqdn}")
+      ec2_instance = Vominator::EC2.create_instance(ec2, hostname, options[:environment], ami, existing_subnets[subnet].id, instance_type, key_name, instance_ip, instance['az'], security_group_ids, user_data, ebs_optimized, instance['iam_profile'])
+      if ec2_instance
+        LOGGER.success("Succesfully created #{fqdn}")
+        ec2_instances[instance_ip] = {:instance_id => ec2_instance.id, :security_groups => ec2_instance.security_groups.map { |sg| sg.group_name}}
+        redo
+      else
+        LOGGER.fatal("Failed to create #{fqdn}")
+      end
+      #TODO: Fix block device mapping
+    end
   end
 end

@@ -1,4 +1,5 @@
 require 'aws-sdk'
+require 'base64'
 require_relative 'constants'
 
 module Vominator
@@ -196,6 +197,33 @@ module Vominator
         devices["/dev/sd#{mount_point}"] = "ephemeral#{i-1}"
       end
       return devices
+    end
+
+    def self.create_instance(resource, hostname, environment, ami_id, subnet_id, instance_type, key_name, private_ip_address, az, security_group_ids, user_data, ebs_optimized, iam_profile)
+      ephemeral_devices = Vominator::EC2.get_ephemeral_devices(instance_type)
+      begin
+        LOGGER.info("Creating instance for #{hostname}.#{environment}")
+        instance = resource.create_instances(:min_count => 1, :max_count => 1, :image_id => ami_id, :subnet_id => subnet_id, :instance_type => instance_type, :key_name => key_name, :private_ip_address => private_ip_address, :placement => {:availability_zone => az}, :security_group_ids => security_group_ids, :user_data => Base64.encode64(user_data), :ebs_optimized => ebs_optimized, :iam_instance_profile => iam_profile).first
+      rescue Aws::EC2::Errors::InvalidIPAddressInUse
+        LOGGER.fatal("Unable to create the instance as #{private_ip_address} is in use")
+      rescue Aws::EC2::Errors::InternalError
+        LOGGER.fatal("Unable to create instance due to an AWS internal server error. Try again in a bit")
+      end
+      LOGGER.info('Waiting for the instance to come online.')
+      sleep 10
+      sleep 2 until Vominator::EC2.get_instance_state(resource, instance.id) != 'pending'
+
+      instance.create_tags(:tags => [{:key => 'Name', :value => "#{hostname}.#{environment}"},{:key => 'Environment', :value => environment},{:key => 'Provisioned_By', :value => 'Vominator'}])
+
+      if Vominator::EC2.get_instance_state(resource, instance.id) == 'running'
+        return instance
+      else
+        return nil
+      end
+    end
+
+    def self.delete_instance(instance_id)
+
     end
   end
 end
