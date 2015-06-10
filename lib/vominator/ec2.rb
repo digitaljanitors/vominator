@@ -200,7 +200,6 @@ module Vominator
     end
 
     def self.create_instance(resource, hostname, environment, ami_id, subnet_id, instance_type, key_name, private_ip_address, az, security_group_ids, user_data, ebs_optimized, iam_profile)
-      ephemeral_devices = Vominator::EC2.get_ephemeral_devices(instance_type)
       begin
         LOGGER.info("Creating instance for #{hostname}.#{environment}")
         instance = resource.create_instances(:min_count => 1, :max_count => 1, :image_id => ami_id, :subnet_id => subnet_id, :instance_type => instance_type, :key_name => key_name, :private_ip_address => private_ip_address, :placement => {:availability_zone => az}, :security_group_ids => security_group_ids, :user_data => Base64.encode64(user_data), :ebs_optimized => ebs_optimized, :iam_instance_profile => iam_profile).first
