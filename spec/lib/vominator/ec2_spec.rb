@@ -758,4 +758,26 @@ describe Vominator::EC2 do
       end
     end
   end
+
+  describe 'terminate_instance' do
+    context 'when I pass a valid resource and instance id' do
+      let (:instance) { Vominator::EC2.terminate_instance(@ec2, 'i-1968d168')}
+
+      subject { instance }
+
+      it 'should terminate the instance' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+          {
+              :reservation_id => 'r-567b402e',
+              :instances => [{
+                                 :instance_id => 'i-1968d168',
+                                 :state => { :code => 64, :name => 'terminated'}
+                             }]
+          }])
+
+        expect { instance }.to_not raise_error
+        expect(instance).to be true
+      end
+    end
+  end
 end

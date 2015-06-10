@@ -33,7 +33,7 @@ OptionParser.new do |opts|
   end
 
   opts.on('--disable-term-protection', 'OPTIONAL: This will disable termination protection on the targeted instances') do
-    options[:disable_termination_protection] = true
+    options[:disable_term_protection] = true
   end
 
   opts.on('--terminate', 'OPTIONAL: This will terminate the specified instances. Must be combined with -s') do
@@ -60,6 +60,10 @@ OptionParser.new do |opts|
   begin
     opts.parse!
     throw Exception unless ((options.include? :environment) && (options.include? :product)) || options[:list]
+    if options[:terminate] || options[:rebuild]
+      throw Exception unless (options[:disable_term_protection] && options[:servers])
+    end
+
   rescue
     puts opts
     exit
@@ -173,7 +177,7 @@ instances.each do |instance|
     ec2_instance_security_groups = ec2_instances[instance_ip][:security_groups].uniq.sort
     ec2_instance_ebs_volumes = Vominator::EC2.get_instance_ebs_volumes(ec2, ec2_instances[instance_ip][:instance_id])
 
-    if options[:disable_termination_protection]
+    if options[:disable_term_protection]
       unless test?("Would disable instance termination protection for #{fqdn}")
         Vominator::EC2.set_termination_protection(ec2_client, ec2_instance.id, false)
         LOGGER.success("Disabled instance termination protection for #{fqdn}")
@@ -188,16 +192,31 @@ instances.each do |instance|
     end
 
     if options[:terminate]
-      #TODO: This would terminate an instance
-      #TODO: Should include deleting chef client and node, as well as route53 record.
+      unless test?("Would terminate #{fqdn}")
+        if Vominator::EC2.terminate_instance(ec2,ec2_instances[instance_ip][:instance_id])
+          LOGGER.success("Succesfully terminated #{fqdn}")
+        else
+          LOGGER.fatal("Failed to terminate #{fqdn}")
+        end
+        #TODO: Should include deleting chef client and node, as well as route53 record.
+      end
       next
     end
 
     if options[:rebuild]
-      #TODO: This would rebuild an instance
-      #TODO: Should include deleting chef client and node
-      #TODO: Remove instance from ec2_instances array and retry this loop thus recreating the instance
-      next
+      unless test?("Would rebuild #{fqdn}")
+        if Vominator::EC2.terminate_instance(ec2,ec2_instances[instance_ip][:instance_id])
+          LOGGER.success("Succesfully terminated #{fqdn}")
+          LOGGER.info("Triggering rebuild of #{fqdn}")
+          ec2_instances.delete(instance_ip)
+        else
+          LOGGER.fatal("Failed to terminate #{fqdn}")
+        end
+        #TODO: Should include deleting chef client and node, as well as route53 record.
+      end
+      options[:rebuild] = false
+      options[:disable_term_protection] = false
+      redo
     end
 
     if ec2_instance.instance_type != instance_type

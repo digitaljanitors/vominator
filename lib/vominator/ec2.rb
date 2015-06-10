@@ -221,8 +221,11 @@ module Vominator
       end
     end
 
-    def self.delete_instance(instance_id)
-
+    def self.terminate_instance(resource, instance_id)
+      instance = Vominator::EC2.get_instance(resource,instance_id)
+      instance.terminate
+      sleep 2 until Vominator::EC2.get_instance_state(resource, instance.id) == 'terminated'
+      return true
     end
   end
 end
