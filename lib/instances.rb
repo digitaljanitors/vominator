@@ -173,19 +173,6 @@ instances.each do |instance|
     ec2_instance_security_groups = ec2_instances[instance_ip][:security_groups].uniq.sort
     ec2_instance_ebs_volumes = Vominator::EC2.get_instance_ebs_volumes(ec2, ec2_instances[instance_ip][:instance_id])
 
-    if options[:terminate]
-      #TODO: This would terminate an instance
-      #TODO: Should include deleting chef client and node, as well as route53 record.
-      next
-    end
-
-    if options[:rebuild]
-      #TODO: This would rebuild an instance
-      #TODO: Should include deleting chef client and node
-      #TODO: Remove instance from ec2_instances array and retry this loop thus recreating the instance
-      next
-    end
-
     if options[:disable_termination_protection]
       unless test?("Would disable instance termination protection for #{fqdn}")
         Vominator::EC2.set_termination_protection(ec2_client, ec2_instance.id, false)
@@ -198,6 +185,19 @@ instances.each do |instance|
           LOGGER.success("Enabled instance termination protection for #{fqdn}")
         end
       end
+    end
+
+    if options[:terminate]
+      #TODO: This would terminate an instance
+      #TODO: Should include deleting chef client and node, as well as route53 record.
+      next
+    end
+
+    if options[:rebuild]
+      #TODO: This would rebuild an instance
+      #TODO: Should include deleting chef client and node
+      #TODO: Remove instance from ec2_instances array and retry this loop thus recreating the instance
+      next
     end
 
     if ec2_instance.instance_type != instance_type
