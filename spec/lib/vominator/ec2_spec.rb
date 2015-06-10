@@ -712,4 +712,22 @@ describe Vominator::EC2 do
       end
     end
   end
+
+  describe 'get_ephemeral_devices' do
+    context 'when I pass a valid instance type' do
+      let (:devices) { Vominator::EC2.get_ephemeral_devices('m3.medium') }
+
+      subject { devices }
+
+      it 'should return a hash consisting of mount points and ephemeral device ids' do
+        expect {devices}.to_not raise_error
+        expect(devices.count).to eq 1
+        expect(devices['/dev/sdb']).to match 'ephemeral0'
+      end
+    end
+
+    context 'when I pass an invalid instance type' do
+      xit 'do something'
+    end
+  end
 end

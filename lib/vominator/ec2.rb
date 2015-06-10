@@ -187,5 +187,15 @@ module Vominator
 
       return volume
     end
+
+    def self.get_ephemeral_devices(instance_type)
+      device_count = Vominator::EC2.get_ephemeral_dev_count(instance_type)
+      devices = Hash.new
+      for i in 1..device_count
+        mount_point = (65 + (i)).chr.downcase
+        devices["/dev/sd#{mount_point}"] = "ephemeral#{i-1}"
+      end
+      return devices
+    end
   end
 end

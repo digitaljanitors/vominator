@@ -295,13 +295,11 @@ instances.each do |instance|
     end
 
   else #The instance does not exist, in which case we want to create it.
-
+    cloud_config = Vominator::Instances.generate_cloud_config(hostname, options[:environment], instance['family'], instance['roles'], instance['recipes'])
+    ephemeral_devices = Vominator::EC2.get_ephemeral_devices(instance_type)
     #TODO: IAM instance Profile
 
-    cloud_config = Vominator::Instances.generate_cloud_config(hostname, options[:environment], instance['family'], instance['roles'], instance['recipes'])
-    #TODO: Setup ephemeral devices
-
-    #TODO: Instance the instance
+    #TODO: create the instance
 
     #TODO: Add the instance Name, and Environment tags
 
