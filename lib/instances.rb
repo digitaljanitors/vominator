@@ -295,7 +295,7 @@ instances.each do |instance|
       end
     end
 
-    #manage DNS entry
+    #TODO: manage DNS entry
 
   else #The instance does not exist, in which case we want to create it.
     user_data = Vominator::Instances.generate_cloud_config(hostname, options[:environment], instance['family'], instance['roles'], instance['recipes'])
