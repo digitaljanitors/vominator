@@ -282,7 +282,6 @@ instances.each do |instance|
       end
     end
 
-    #TODO: Manage EBS Volumes
     instance_ebs_volumes.each do |device,options|
       unless ec2_instance_ebs_volumes.include? device
         unless test?("Would create and mount a #{options['type']} EBS volume on #{device} for #{fqdn}")
