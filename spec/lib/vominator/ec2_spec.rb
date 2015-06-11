@@ -3,7 +3,7 @@ require 'vominator/ec2'
 require 'pry'
 describe Vominator::EC2 do
 
-  before(:all) do
+  before(:each) do
     @puke_variables = Vominator.get_puke_variables('test')
     Aws.config[:stub_responses] = true
     @ec2_client = Aws::EC2::Client.new
@@ -51,8 +51,9 @@ describe Vominator::EC2 do
           :state => { :code => 16, :name => 'running'},
           :tags => [{:key => 'Name', :value => 'sample-api-1.test'}],
           :placement => {:availability_zone => 'us-east-1c'},
-          :security_groups => [{:group_name => 'test-sample-api-server', :group_id => 'sg-11111'}]
-          }]
+          :security_groups => [{:group_name => 'test-sample-api-server', :group_id => 'sg-11111'}],
+          :block_device_mappings => [{:device_name => 'sdf', :ebs => {:volume_id => 'vol-11111', :status => 'in-use'}}]
+       }]
       },
       {
         :reservation_id => 'r-7013f428',
@@ -149,6 +150,18 @@ describe Vominator::EC2 do
           ]
       }
     ])
+    @ec2_client.stub_responses(:describe_volumes, :next_token => nil, :volumes => [
+     :volume_id => 'vol-11111',
+     :size => 100,
+     :availability_zone => 'us-east-1c',
+     :state => 'in-use',
+     :attachments => [{
+                          :volume_id => 'vol-11111',
+                          :instance_id => 'i-1968d168',
+                          :device => 'sdf',
+                          :state => 'in-use'
+                      }]
+                  ])
     @ec2 = Aws::EC2::Resource.new(client: @ec2_client)
   end
 
@@ -642,6 +655,128 @@ describe Vominator::EC2 do
         expect { security_groups }.to_not raise_error
         expect(security_groups.count).to eq 1
         expect(security_groups).to include 'test-security-group'
+      end
+    end
+  end
+
+  describe 'get_ebs_volume' do
+    context 'when I pass a valid resource and ebs_volume_id' do
+      let (:volume) { Vominator::EC2.get_ebs_volume(@ec2, 'vol-11111') }
+
+      subject { volume }
+
+      it 'should return a valid aws ec2 volume object' do
+        expect { volume }.to_not raise_error
+        expect(volume.id).to eq 'vol-11111'
+      end
+    end
+
+    context 'when I pass an invalid resource or ebs_volume_id' do
+      xit 'do something'
+    end
+
+  end
+
+  describe 'get_instance_ebs_volumes' do
+    context 'when I pass a valid resource and instance id' do
+      let (:volumes) { Vominator::EC2.get_instance_ebs_volumes(@ec2, 'i-1968d168') }
+
+      subject { volumes }
+
+      it 'should return a list of device names for attached ebs volumes' do
+        expect { volumes }.to_not raise_error
+        expect(volumes.count).to eq 1
+        expect(volumes.first).to match 'sdf'
+      end
+    end
+
+    context 'when I pass an invalid resource or instance id' do
+      xit 'do something'
+    end
+  end
+
+  describe 'add_ebs_volume' do
+    context 'when I pass a valid resource, instance_id, volume_type, volume_size, and mount_point)' do
+      let (:volume) { Vominator::EC2.add_ebs_volume(@ec2, 'i-1968d168', 'magnetic', 100, 'sdf')}
+
+      subject { volume }
+
+      it 'should return a valid volume object' do
+        @ec2_client.stub_responses(:describe_volumes,
+                                   {:volumes => [{:volume_id => 'vol-11111', :size => 100, :availability_zone => 'us-east-1c', :state => 'available'}]},
+                                   {:volumes => [{:volume_id => 'vol-11111', :size => 100, :availability_zone => 'us-east-1c', :state => 'in-use'}]}
+        )
+        @ec2_client.stub_responses(:create_volume, :volume_id => 'vol-11111', :size => 100, :availability_zone => 'us-east-1c', :state => 'in-use', :attachments => [{:device => 'sdf', :volume_id => 'vol-11111', :state => 'in-use'}])
+        expect { volume }.to_not raise_error
+        expect(volume.attachments.first.device).to match 'sdf'
+      end
+    end
+  end
+
+  describe 'get_ephemeral_devices' do
+    context 'when I pass a valid instance type' do
+      let (:devices) { Vominator::EC2.get_ephemeral_devices('m3.medium') }
+
+      subject { devices }
+
+      it 'should return a hash consisting of mount points and ephemeral device ids' do
+        expect {devices}.to_not raise_error
+        expect(devices.count).to eq 1
+        expect(devices['/dev/sdb']).to match 'ephemeral0'
+      end
+    end
+
+    context 'when I pass an invalid instance type' do
+      xit 'do something'
+    end
+  end
+
+  describe 'create_instance' do
+    context 'when I pass a valid resource, hostname, environment, ami, subnet id, instance type, keypair name, private ip, az and security groups' do
+      let (:instance) { Vominator::EC2.create_instance(@ec2, 'sample-api-1','test','ami-111111','sub-11111','m3.medium','test@example.com','10.203.41.21','us-east-1c',['sg-11111'],'',false,nil)}
+
+      subject { instance }
+
+      it 'should create an instance' do
+        @ec2_client.stub_responses(:run_instances, :next_token => nil, :instances => [
+          {
+             :instance_id => 'i-1968d168',
+             :state => { :code => 64, :name => 'running'}
+          }])
+
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+          {
+              :reservation_id => 'r-567b402e',
+              :instances => [{
+                                 :instance_id => 'i-1968d168',
+                                 :state => { :code => 64, :name => 'running'}
+                             }]
+          }])
+
+        expect { instance }.to_not raise_error
+        expect(instance.id).to match 'i-1968d168'
+      end
+    end
+  end
+
+  describe 'terminate_instance' do
+    context 'when I pass a valid resource and instance id' do
+      let (:instance) { Vominator::EC2.terminate_instance(@ec2, 'i-1968d168')}
+
+      subject { instance }
+
+      it 'should terminate the instance' do
+        @ec2_client.stub_responses(:describe_instances, :next_token => nil, :reservations => [
+          {
+              :reservation_id => 'r-567b402e',
+              :instances => [{
+                                 :instance_id => 'i-1968d168',
+                                 :state => { :code => 64, :name => 'terminated'}
+                             }]
+          }])
+
+        expect { instance }.to_not raise_error
+        expect(instance).to be true
       end
     end
   end

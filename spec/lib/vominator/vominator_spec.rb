@@ -55,6 +55,19 @@ describe Vominator do
     end
   end
 
+  describe 'get_key_pair' do
+    context 'when I pass a valid Vominator config' do
+      vominator_config = Vominator.get_config('test/vominator.yaml')
+      let (:key_pair) { Vominator.get_key_pair(vominator_config) }
+
+      subject { key_pair }
+
+      it 'should return a key_pair name' do
+        expect { key_pair }.to_not raise_error
+        expect(key_pair).to match 'ci@example.com'
+      end
+    end
+  end
   describe 'get_puke_variables' do
 
     context 'when I pass an invalid environment' do

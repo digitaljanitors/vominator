@@ -5,9 +5,10 @@ test:
   zone: Z2IOTRJNNABNJ
   octet: '203'
   domain: example.com
-  cloud_config_template: cloud-config-example.erb
+  linux_cloud_config_template: cloud-config-example.erb
   linux_paravirtual_base_image: ami-280d0740
   linux_hvm_base_image: ami-260d074e
+  windows_cloud_config_template: cloud-config-example.erb
   windows_paravirtual_base_image: ami-78bce2lm
   windows_hvm_base_image: ami-9231e2fa
   chef_host: 'https://chef.test.example.com:443'

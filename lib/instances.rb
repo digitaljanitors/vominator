@@ -33,7 +33,7 @@ OptionParser.new do |opts|
   end
 
   opts.on('--disable-term-protection', 'OPTIONAL: This will disable termination protection on the targeted instances') do
-    options[:disable_termination_protection] = true
+    options[:disable_term_protection] = true
   end
 
   opts.on('--terminate', 'OPTIONAL: This will terminate the specified instances. Must be combined with -s') do
@@ -60,6 +60,10 @@ OptionParser.new do |opts|
   begin
     opts.parse!
     throw Exception unless ((options.include? :environment) && (options.include? :product)) || options[:list]
+    if options[:terminate] || options[:rebuild]
+      throw Exception unless (options[:disable_term_protection] && options[:servers])
+    end
+
   rescue
     puts opts
     exit
@@ -134,13 +138,12 @@ instances.each do |instance|
   instance_type = instance['type'][options[:environment]]
   instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
   instance_security_groups = instance['security_groups'].map { |sg| "#{options[:environment]}-#{sg}"}.uniq.sort
-  ec2_instance_security_groups = ec2_instances[instance_ip][:security_groups].uniq.sort
   ebs_optimized = instance['ebs_optimized'].nil? ? false : instance['ebs_optimized']
   source_dest_check = instance['source_dest_check'].nil? ? true : instance['source_dest_check']
+  instance_ebs_volumes = instance['ebs'].nil? ? [] : instance['ebs']
+  key_name = Vominator.get_key_pair(VOMINATOR_CONFIG)
 
   LOGGER.info("Working on #{fqdn}")
-
-  #TODO: IAM instance Profile
 
   if instance['environment'] && !instance['environment'].include?(options[:environment])
     LOGGER.info("#{fqdn} is not marked for deployment in #{options[:environment]}")
@@ -171,20 +174,10 @@ instances.each do |instance|
   if ec2_instances[instance_ip]
 
     ec2_instance = Vominator::EC2.get_instance(ec2, ec2_instances[instance_ip][:instance_id])
+    ec2_instance_security_groups = ec2_instances[instance_ip][:security_groups].uniq.sort
+    ec2_instance_ebs_volumes = Vominator::EC2.get_instance_ebs_volumes(ec2, ec2_instances[instance_ip][:instance_id])
 
-    if options[:terminate]
-      #TODO: This would terminate an instance
-      #TODO: Should include deleting chef client and node, as well as route53 record.
-      next
-    end
-
-    if options[:rebuild]
-      #TODO: This would rebuild an instance
-      #TODO: Should include deleting chef client and node
-      next
-    end
-
-    if options[:disable_termination_protection]
+    if options[:disable_term_protection]
       unless test?("Would disable instance termination protection for #{fqdn}")
         Vominator::EC2.set_termination_protection(ec2_client, ec2_instance.id, false)
         LOGGER.success("Disabled instance termination protection for #{fqdn}")
@@ -196,6 +189,34 @@ instances.each do |instance|
           LOGGER.success("Enabled instance termination protection for #{fqdn}")
         end
       end
+    end
+
+    if options[:terminate]
+      unless test?("Would terminate #{fqdn}")
+        if Vominator::EC2.terminate_instance(ec2,ec2_instances[instance_ip][:instance_id])
+          LOGGER.success("Succesfully terminated #{fqdn}")
+        else
+          LOGGER.fatal("Failed to terminate #{fqdn}")
+        end
+        #TODO: Should include deleting chef client and node, as well as route53 record.
+      end
+      next
+    end
+
+    if options[:rebuild]
+      unless test?("Would rebuild #{fqdn}")
+        if Vominator::EC2.terminate_instance(ec2,ec2_instances[instance_ip][:instance_id])
+          LOGGER.success("Succesfully terminated #{fqdn}")
+          LOGGER.info("Triggering rebuild of #{fqdn}")
+          ec2_instances.delete(instance_ip)
+        else
+          LOGGER.fatal("Failed to terminate #{fqdn}")
+        end
+        #TODO: Should include deleting chef client and node, as well as route53 record.
+      end
+      options[:rebuild] = false
+      options[:disable_term_protection] = false
+      redo
     end
 
     if ec2_instance.instance_type != instance_type
@@ -250,7 +271,6 @@ instances.each do |instance|
       end
     end
 
-
     unless ec2_instance_security_groups == instance_security_groups
       LOGGER.info("Security group mismatch detected for #{fqdn}")
       sg_missing = instance_security_groups - ec2_instance_security_groups
@@ -281,10 +301,34 @@ instances.each do |instance|
         end
       end
     end
+
+    instance_ebs_volumes.each do |device,options|
+      unless ec2_instance_ebs_volumes.include? device
+        unless test?("Would create and mount a #{options['type']} EBS volume on #{device} for #{fqdn}")
+          if Vominator::EC2.add_ebs_volume(ec2, ec2_instance.id, options['type'], options['size'], device, options['iops'], options['encrypted'])
+            LOGGER.success("Succesfully created and mounted #{device} to #{fqdn}")
+          else
+            LOGGER.fatal("Failed to create and mount #{device} to #{fqdn}")
+          end
+        end
+      end
+    end
+
+    #TODO: manage DNS entry
+
   else #The instance does not exist, in which case we want to create it.
-    #TODO: Instance Creation Logic
+    user_data = Vominator::Instances.generate_cloud_config(hostname, options[:environment], instance['family'], instance['roles'], instance['recipes'])
+    security_group_ids = instance_security_groups.map {|sg| vpc_security_groups[sg] }
 
-    #TODO: Post Instance Creation Tasks (DNS, EIP, EBS Volumes)
-
+    unless test?("Would create #{fqdn}")
+      ec2_instance = Vominator::EC2.create_instance(ec2, hostname, options[:environment], ami, existing_subnets[subnet].id, instance_type, key_name, instance_ip, instance['az'], security_group_ids, user_data, ebs_optimized, instance['iam_profile'])
+      if ec2_instance
+        LOGGER.success("Succesfully created #{fqdn}")
+        ec2_instances[instance_ip] = {:instance_id => ec2_instance.id, :security_groups => ec2_instance.security_groups.map { |sg| sg.group_name}}
+        redo
+      else
+        LOGGER.fatal("Failed to create #{fqdn}")
+      end
+    end
   end
 end

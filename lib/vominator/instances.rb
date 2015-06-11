@@ -1,4 +1,5 @@
 require_relative 'constants'
+require 'erubis'
 
 module Vominator
   class Instances
@@ -17,6 +18,17 @@ module Vominator
         end
         return instances if instances.kind_of?(Array)
       end
+    end
+
+    def self.generate_cloud_config(hostname, environment, family, roles, recipes)
+      template = "#{family}_cloud_config_template"
+      begin
+        cloud_config_template = File.read("#{VOMINATOR_CONFIG['configuration_path']}/cloud-configs/#{PUKE_CONFIG[environment][template]}")
+      rescue Errno::EISDIR
+        LOGGER.fatal("Unable to find #{template} in your cloud-config directory. Check that this file exists in #{VOMINATOR_CONFIG['configuration_path']}/cloud-configs/")
+      end
+      cloud_config = Erubis::Eruby.new(cloud_config_template)
+      return cloud_config.result(:hostname => hostname, :env => environment, :roles => roles, :recipes => recipes)
     end
   end
 end

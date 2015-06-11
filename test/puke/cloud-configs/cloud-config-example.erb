@@ -1,0 +1,63 @@
+#cloud-config
+
+#Hostname
+hostname: <%= hostname %>
+fqdn: <%= hostname %>.<%= env %>.example.com
+
+# reset localhost on boot
+manage_etc_hosts: True
+
+#Dont touch /etc/apt/sources.list as we manage this in the base image.
+apt_preserve_sources_list: true
+
+#Perform an apt-get update
+apt_update: True
+
+#Tell ohai that we are ec2
+write_files:
+-  path: /etc/chef/ohai/hints/ec2.json
+   permissions: '0644'
+   content: ''
+
+chef:
+
+ # Valid values are 'gems' and 'packages'
+ install_type: "packages"
+
+ # Chef settings
+ server_url: "https://chef.int.example.com"
+
+ # Node Name
+ # Defaults to the instance-id if not present
+ node_name: "<%= hostname %>.<%= env %>"
+
+ # Environment
+ # Defaults to '_default' if not present
+ environment: "<%= env %>"
+
+ # Default validation name is chef-validator
+ validation_name: "chef-validator"
+ validation_key: |
+     -----BEGIN RSA PRIVATE KEY-----
+     -----END RSA PRIVATE KEY-----
+
+ # A run list for a first boot json
+ run_list:
+ <% if roles -%>
+   <% roles.each do |role| %>
+     - "role[<%= role %>]"
+   <% end -%>
+ <% end -%>
+ <% if recipes -%>
+   <% recipes.each do |recipe| %>
+     - "recipe[<%= recipe %>]"
+   <% end -%>
+ <% end -%>
+
+runcmd:
+    - [ chef-client ]
+
+# Capture all subprocess output into a logfile
+# Useful for troubleshooting cloud-init issues
+output: {all: '| tee -a /var/log/cloud-init-output.log'}
+
