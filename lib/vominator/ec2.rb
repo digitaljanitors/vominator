@@ -202,7 +202,7 @@ module Vominator
     def self.create_instance(resource, hostname, environment, ami_id, subnet_id, instance_type, key_name, private_ip_address, az, security_group_ids, user_data, ebs_optimized, iam_profile)
       begin
         LOGGER.info("Creating instance for #{hostname}.#{environment}")
-        instance = resource.create_instances(:min_count => 1, :max_count => 1, :image_id => ami_id, :subnet_id => subnet_id, :instance_type => instance_type, :key_name => key_name, :private_ip_address => private_ip_address, :placement => {:availability_zone => az}, :security_group_ids => security_group_ids, :user_data => Base64.encode64(user_data), :ebs_optimized => ebs_optimized, :iam_instance_profile => iam_profile).first
+        instance = resource.create_instances(:min_count => 1, :max_count => 1, :image_id => ami_id, :subnet_id => subnet_id, :instance_type => instance_type, :key_name => key_name, :private_ip_address => private_ip_address, :placement => {:availability_zone => az}, :security_group_ids => security_group_ids, :user_data => Base64.encode64(user_data), :ebs_optimized => ebs_optimized, :iam_instance_profile => {:name => iam_profile}).first
       rescue Aws::EC2::Errors::InvalidIPAddressInUse
         LOGGER.fatal("Unable to create the instance as #{private_ip_address} is in use")
       rescue Aws::EC2::Errors::InternalError
