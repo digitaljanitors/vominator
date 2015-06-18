@@ -316,6 +316,8 @@ instances.each do |instance|
 
     #TODO: manage DNS entry
 
+    #TODO: associate SSM document
+
   else #The instance does not exist, in which case we want to create it.
     user_data = Vominator::Instances.generate_cloud_config(hostname, options[:environment], instance['family'], instance['roles'], instance['recipes'])
     security_group_ids = instance_security_groups.map {|sg| vpc_security_groups[sg] }
