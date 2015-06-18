@@ -33,6 +33,24 @@ module Vominator
       end
     end
 
+    def self.associated?(client,name,instance_id)
+      begin
+        client.describe_association(:name => name, :instance_id => instance_id)
+        return true
+      rescue Aws::SSM::Errors::AssociationDoesNotExist
+        return false
+      end
+    end
 
+    def self.create_association(client,name,instance_id)
+      client.create_association(:name => name, :instance_id => instance_id)
+      sleep 2 until Vominator::SSM.associated?(client,name,instance_id)
+
+      if Vominator::SSM.associated?(client,name,instance_id)
+        return true
+      else
+        return false
+      end
+    end
   end
 end
