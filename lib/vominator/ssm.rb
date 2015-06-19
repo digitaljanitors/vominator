@@ -1,3 +1,4 @@
+require 'aws-sdk'
 require_relative 'constants'
 
 module Vominator
