@@ -216,7 +216,7 @@ instances.each do |instance|
         else
           LOGGER.fatal("Failed to terminate #{fqdn}")
         end
-        #TODO: Should include deleting chef client and node, as well as route53 record.
+        #TODO: Should include deleting chef client and node.
       end
       options[:rebuild] = false
       options[:disable_term_protection] = false
@@ -318,7 +318,15 @@ instances.each do |instance|
       end
     end
 
-    #TODO: manage DNS entry
+    unless route53_records.include?("#{fqdn}.")
+      unless test?("Would add a DNS record for #{fqdn}")
+        if Vominator::Route53.create_record(r53,puke_config['zone'],fqdn,instance_ip)
+          LOGGER.success("Succesfuly created a dns record for #{fqdn}")
+        else
+          LOGGER.fatal("Failed to create a DNS record for #{fqdn}")
+        end
+      end
+    end
 
     ssm_documents.each do |doc_name|
       unless Vominator::SSM.associated?(ssm,doc_name,ec2_instance.id)
