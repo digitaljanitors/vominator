@@ -72,7 +72,7 @@ describe Vominator::SSM do
       subject { association }
 
       it 'returns true' do
-        @ssm.stub_responses(:describe_association, :association_description => {:date => Time.now, :instance_id => 'i-123456', :name => 'document-1', :status => {:name => 'Success'}})
+        @ssm.stub_responses(:describe_association, :association_description => {:date => Time.now, :instance_id => 'i-123456', :name => 'document-1', :status => {:name => 'Success', :date => Time.now, :message => 'It worked'}})
         expect { association }.to_not raise_error
         expect(association).to be true
       end
@@ -86,7 +86,7 @@ describe Vominator::SSM do
       subject { association }
 
       it 'returns true' do
-        @ssm.stub_responses(:describe_association, :association_description => {:date => Time.now, :instance_id => 'i-123456', :name => 'document-1', :status => {:name => 'Success'}})
+        @ssm.stub_responses(:describe_association, :association_description => {:date => Time.now, :instance_id => 'i-123456', :name => 'document-1', :status => {:name => 'Success', :date => Time.now, :message => 'It worked'}})
         expect { association }.to_not raise_error
         expect(association).to be true
       end
