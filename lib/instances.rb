@@ -195,14 +195,18 @@ instances.each do |instance|
       end
     end
 
-    if options[:terminate]
+    if options[:terminate] #check if the instance even exists?
       unless test?("Would terminate #{fqdn}")
         if Vominator::EC2.terminate_instance(ec2,ec2_instances[instance_ip][:instance_id])
           LOGGER.success("Succesfully terminated #{fqdn}")
+          LOGGER.info('Performing Cleanup Tasks...')
+          if Vominator::Route53.delete_record(r53,puke_config['zone'],fqdn, instance_ip)
+            LOGGER.success("Removed DNS entry for #{fqdn}")
+          end
         else
           LOGGER.fatal("Failed to terminate #{fqdn}")
         end
-        #TODO: Should include deleting chef client and node, as well as route53 record.
+        #TODO: Should include deleting chef client and node.
       end
       next
     end
