@@ -6,6 +6,7 @@ require_relative 'vominator/aws'
 require_relative 'vominator/ec2'
 require_relative 'vominator/instances'
 require_relative 'vominator/route53'
+require_relative 'vominator/ssm'
 
 options = {}
 
@@ -125,6 +126,8 @@ r53 = Aws::Route53::Client.new(region: puke_config['region_name'])
 #Get existing DNS entries for the zone.
 route53_records = Vominator::Route53.get_records(r53, puke_config['zone'])
 
+#Get SSM connection
+ssm = Aws::SSM::Client.new(region: puke_config['region_name'])
 
 #Get existing Subnets for the VPC
 existing_subnets = Vominator::EC2.get_subnets(ec2, puke_config['vpc_id'])
@@ -142,6 +145,7 @@ instances.each do |instance|
   source_dest_check = instance['source_dest_check'].nil? ? true : instance['source_dest_check']
   instance_ebs_volumes = instance['ebs'].nil? ? [] : instance['ebs']
   key_name = Vominator.get_key_pair(VOMINATOR_CONFIG)
+  ssm_documents = instance['ssm_documents'].nil? ? [] : instance['ssm_documents']
 
   LOGGER.info("Working on #{fqdn}")
 
@@ -212,7 +216,7 @@ instances.each do |instance|
         else
           LOGGER.fatal("Failed to terminate #{fqdn}")
         end
-        #TODO: Should include deleting chef client and node, as well as route53 record.
+        #TODO: Should include deleting chef client and node.
       end
       options[:rebuild] = false
       options[:disable_term_protection] = false
@@ -314,7 +318,27 @@ instances.each do |instance|
       end
     end
 
-    #TODO: manage DNS entry
+    unless route53_records.include?("#{fqdn}.")
+      unless test?("Would add a DNS record for #{fqdn}")
+        if Vominator::Route53.create_record(r53,puke_config['zone'],fqdn,instance_ip)
+          LOGGER.success("Succesfuly created a dns record for #{fqdn}")
+        else
+          LOGGER.fatal("Failed to create a DNS record for #{fqdn}")
+        end
+      end
+    end
+
+    ssm_documents.each do |doc_name|
+      unless Vominator::SSM.associated?(ssm,doc_name,ec2_instance.id)
+        unless test?("Would associate SSM Document #{doc_name} to #{fqdn}")
+          if Vominator::SSM.create_association(ssm,doc_name,ec2_instance.id)
+            LOGGER.success("Succesfully associated #{doc_name} to #{fqdn}")
+          else
+            LOGGER.fatal("Failed to associate #{doc_name} to #{fqdn}")
+          end
+        end
+      end
+    end
 
   else #The instance does not exist, in which case we want to create it.
     user_data = Vominator::Instances.generate_cloud_config(hostname, options[:environment], instance['family'], instance['roles'], instance['recipes'])

@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 2.0'
 
-  spec.add_dependency 'aws-sdk', '~> 2.0'
+  spec.add_dependency 'aws-sdk', '= 2.1.11'
   spec.add_dependency 'colored', '~> 1.2'
   spec.add_dependency 'highline', '~> 1.7'
   spec.add_dependency 'erubis', '~> 2.7'

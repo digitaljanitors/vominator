@@ -3,6 +3,8 @@
 # TODO: this should be case statements
 if ARGV[0] == 'instances'
   require_relative '../lib/instances'
+elsif ARGV[0] == 'ssm'
+  require_relative '../lib/ssm'
 else
   puts 'Module not found. Currently supported modules are: instances'
 end
