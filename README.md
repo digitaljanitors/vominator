@@ -1,24 +1,39 @@
 # Vominator
 
-TODO: Write a gem description
+**NOTE** This is still in development, and for now depends on VPCs and such being setup a certain way. More on that to come.
+
+A CLI utility for managing AWS resources from yaml templates. This allow you to define resources within a dev VPC, and replicate that to a QA/Staging/Prod VPC without any additional work.
+
 
 ## Installation
 
-Add this line to your application's Gemfile:
-
-    gem 'vominator'
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install vominator
-
+1. `$ gem install vominator`
+2. Create ~/.vominator.yaml
+```
+---
+access_key_id: AWS_SECRET_KEY
+secret_access_key: AWS_SECRET_ACCESS_KEY
+configuration_path: Location to sample puke
+key_pair_name: infrastructure@example.com
+```
 ## Usage
 
-TODO: Write usage instructions here
+```
+$ vominate instances -h
+Usage: vominate instance [options]
+    -p, --product PRODUCT            REQUIRED: The product which you want to manage instances for
+    -e, --environment ENVIRONMENT    REQUIRED: The environment which you want to manage instances for
+    -s, --servers SERVERS            OPTIONAL: Comma Delimited list of servers that you want to manage instances for
+    -t, --test                       OPTIONAL: Test run. Show what would be changed without making any actual changes
+        --fix-security-groups        OPTIONAL: Fix an instances security groups
+        --disable-term-protection    OPTIONAL: This will disable termination protection on the targeted instances
+        --terminate                  OPTIONAL: This will terminate the specified instances. Must be combined with -s
+        --rebuild                    OPTIONAL: This will terminate and relaunch the specified instances. Must be combined with -s
+    -l, --list                       OPTIONAL: List out products and environments
+    -d, --debug                      OPTIONAL: debug output
+    -h, --help                       OPTIONAL: Display this screen
+```
+
 
 ## Contributing
 
