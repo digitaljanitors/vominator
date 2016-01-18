@@ -1,8 +1,16 @@
 # Vominator
 
-**NOTE** This is still in development, and for now depends on VPCs and such being setup a certain way. More on that to come.
+**NOTE** This is still in development, and for now depends on VPCs and such being setup a certain way. This gem is also not yet published, so if you want to play with it you will need to clone this repo and build/install it.
 
 A CLI utility for managing AWS resources from yaml templates. This allow you to define resources within a dev VPC, and replicate that to a QA/Staging/Prod VPC without any additional work.
+
+This CLI utility expects that your VPCs are setup in a specific way. The creation of this will be bundled in, however for now you can use this Init script which should be able to create things in the required structure.
+
+https://gist.github.com/chkelly/95c3314aa1331a7ac438
+
+This CLI utility will require you to define resources via YAML files. This should be kept in a repo of yours. You can see https://github.com/digitaljanitors/sample-puke for a reference.
+
+
 
 
 ## Installation
