@@ -1,5 +1,6 @@
 # Vominator
 
+
 **NOTE** This is still in development, and for now depends on VPCs and such being setup a certain way. This gem is also not yet published, so if you want to play with it you will need to clone this repo and build/install it.
 
 A CLI utility for managing AWS resources from yaml templates. This allow you to define resources within a dev VPC, and replicate that to a QA/Staging/Prod VPC without any additional work.

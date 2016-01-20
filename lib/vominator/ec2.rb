@@ -5,7 +5,11 @@ require_relative 'constants'
 module Vominator
   class EC2
     def self.get_virt_type(instance_type)
-      return EC2_INSTANCE_METADATA[instance_type.to_sym][:virtualization_type]
+      begin
+        return EC2_INSTANCE_METADATA[instance_type.to_sym][:virtualization_type]
+      rescue NoMethodError
+        raise ArgumentError, 'You must specify a valid instance type'
+      end
     end
 
     def self.get_ephemeral_dev_count(instance_type)
@@ -88,6 +92,11 @@ module Vominator
         instance.start
       end
       return Vominator::EC2.get_instance(resource,instance_id).instance_type
+    end
+
+
+    def self.allocate_public_ip(client, domain='vpc')
+      return client.allocate_address(domain: domain)
     end
 
     def self.assign_public_ip(client, instance_id)
@@ -226,6 +235,10 @@ module Vominator
       instance.terminate
       sleep 2 until Vominator::EC2.get_instance_state(resource, instance.id) == 'terminated'
       return true
+    end
+
+    def self.tag_resource(client, resource_id, tags)
+      client.create_tags(resources: [resource_id], tags: tags)
     end
   end
 end

@@ -9,9 +9,9 @@ describe Vominator do
 
       subject { vominator_config }
 
-      it 'should equal false' do
+      it 'should exit' do
         cached_vominator_config = ENV.delete('VOMINATOR_CONFIG')
-        expect(subject).to be false
+	expect{ subject }.to exit_with_code(1)
         ENV['VOMINATOR_CONFIG'] = cached_vominator_config
       end
 
