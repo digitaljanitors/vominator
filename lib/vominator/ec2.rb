@@ -94,6 +94,11 @@ module Vominator
       return Vominator::EC2.get_instance(resource,instance_id).instance_type
     end
 
+
+    def self.allocate_public_ip(client, domain='vpc')
+      return client.allocate_address(domain: domain)
+    end
+
     def self.assign_public_ip(client, instance_id)
       eip = client.allocate_address(:domain => 'vpc')
       tries ||= 3
@@ -230,6 +235,10 @@ module Vominator
       instance.terminate
       sleep 2 until Vominator::EC2.get_instance_state(resource, instance.id) == 'terminated'
       return true
+    end
+
+    def self.tag_resource(client, resource_id, tags)
+      client.create_tags(resources: [resource_id], tags: tags)
     end
   end
 end

@@ -1,10 +1,14 @@
 #!/usr/bin/env ruby
 
-# TODO: this should be case statements
-if ARGV[0] == 'instances'
+aws_module = ARGV[0] || nil
+
+case aws_module
+when 'instances'
   require_relative '../lib/instances'
-elsif ARGV[0] == 'ssm'
+when 'ssm'
   require_relative '../lib/ssm'
+when 'vpc'
+  require_relative '../lib/vpc'
 else
-  puts 'Module not found. Currently supported modules are: instances'
+  puts 'Module not found. Currently supported modules are: instances, ssm, vpc'
 end
