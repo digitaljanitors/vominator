@@ -7,7 +7,7 @@ Gem::Specification.new do |spec|
   spec.name          = 'vominator'
   spec.version       = Vominator::VERSION
   spec.authors       = ['Chris Kelly', 'Kevin Loukinen', 'Chris McNabb']
-  spec.email         = ['ckelly@newsinc.com', 'kloukinen@newsinc.com', 'cmcnabb@newsinc.com']
+  spec.email         = ['chris@chris-kelly.net', 'kevin@loki.net', 'raizyr@gmail.com']
   spec.summary       = %q{Manage AWS resources from JSON templates and CLI.}
   spec.description   = %q{Leverage the power of CLI with your favorite revision control system to create and manage AWS infrastructure.}
   spec.homepage      = ''
@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 2.0'
 
-  spec.add_dependency 'aws-sdk', '= 2.1.11'
+  spec.add_dependency 'aws-sdk', '= 2.2.14'
   spec.add_dependency 'colored', '~> 1.2'
   spec.add_dependency 'highline', '~> 1.7'
   spec.add_dependency 'erubis', '~> 2.7'

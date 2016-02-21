@@ -182,8 +182,8 @@ describe Vominator::EC2 do
 
       subject { instance_type }
 
-      xit 'should do something' do
-
+      it 'should raise error ArgumentError' do
+        expect { instance_type }.to raise_error(ArgumentError)
       end
     end
   end

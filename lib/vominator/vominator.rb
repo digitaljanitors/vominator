@@ -10,7 +10,7 @@ module Vominator
       vominator_config = YAML.load(File.read(config_file))
       return vominator_config if vominator_config.kind_of?(Hash)
     else
-      #TODO: This should instead raise an error.
+      LOGGER.fatal("Unable to load vominator configuration file from #{config_file}")
       return false
     end
   end
