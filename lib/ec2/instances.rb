@@ -133,7 +133,7 @@ ssm = Aws::SSM::Client.new(region: puke_config['region_name'])
 existing_subnets = Vominator::EC2.get_subnets(ec2, puke_config['vpc_id'])
 
 #Get existing Security Groups for the VPC
-vpc_security_groups = Vominator::EC2.get_security_groups(ec2, puke_config['vpc_id'])
+vpc_security_groups = Vominator::EC2.get_security_group_name_ids_hash(ec2, puke_config['vpc_id'])
 
 instances.each do |instance|
   hostname = instance.keys[0]

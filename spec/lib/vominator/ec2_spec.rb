@@ -252,9 +252,9 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'get_security_groups' do
+  describe 'get_security_group_name_ids_hash' do
     context 'when I pass a valid resource and vpc_id' do
-      let (:security_groups) { Vominator::EC2.get_security_groups(@ec2, @puke_variables['vpc_id'])}
+      let (:security_groups) { Vominator::EC2.get_security_group_name_ids_hash(@ec2, @puke_variables['vpc_id'])}
 
       subject { security_groups }
 
