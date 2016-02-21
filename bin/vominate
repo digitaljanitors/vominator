@@ -3,12 +3,10 @@
 aws_module = ARGV[0] || nil
 
 case aws_module
-when 'instances'
-  require_relative '../lib/instances'
-when 'ssm'
-  require_relative '../lib/ssm'
+when 'ec2'
+  require_relative '../lib/ec2'
 when 'vpc'
   require_relative '../lib/vpc'
 else
-  puts 'Module not found. Currently supported modules are: instances, ssm, vpc'
+  puts 'Module not found. Currently supported modules are: ec2 vpc'
 end

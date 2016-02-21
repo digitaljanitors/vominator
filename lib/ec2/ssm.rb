@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 require 'optparse'
 require 'colored'
-require_relative 'vominator/constants'
-require_relative 'vominator/aws'
-require_relative 'vominator/ssm'
+require_relative '../vominator/constants'
+require_relative '../vominator/aws'
+require_relative '../vominator/ssm'
 
 options = {}
 
