@@ -40,7 +40,19 @@ describe Vominator::Route53 do
 
   describe 'create_record' do
     context 'when I pass a valid route53 client, zone, fqdn, and ip' do
-      let (:response) { Vominator::Route53.create_record(@r53,"/hostedzone/#{@puke_variables['zone']}", 'sample-api-1.test.example.com', '10.203.41.21')}
+      let (:response) { Vominator::Route53.create_record(@r53,"#{@puke_variables['zone']}", 'sample-api-1.test.example.com', '10.203.41.21')}
+
+      subject { response }
+
+      it 'should return true' do
+        @r53.stub_responses(:change_resource_record_sets, :change_info => { :status => 'PENDING', :id => '12345', :submitted_at => Time.now})
+      end
+    end
+  end
+
+  describe 'delete_record' do
+    context 'When I pass a valid route53 client, zone, fqdn, and ip' do
+      let (:response) { Vominator::Route53.delete_record(@r53, "#{@puke_variables['zone']}",'sample-api-1.test.example.com', '10.203.41.21')}
 
       subject { response }
 
