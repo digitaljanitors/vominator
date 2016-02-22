@@ -1,9 +1,11 @@
 #!/usr/bin/env ruby
 require 'optparse'
 require 'colored'
+require 'terminal-table'
 require_relative '../vominator/constants'
 require_relative '../vominator/aws'
 require_relative '../vominator/security_groups'
+require_relative '../vominator/ec2'
 
 options = {}
 
@@ -22,12 +24,19 @@ OptionParser.new do |opts|
     options[:groups] = value
   end
 
+  opts.on('--delete', 'Enable Deletions. This should be used with care') do |value|
+    options[:delete] = value
+  end
   opts.on('-t', '--test', 'OPTIONAL: Test run. Show what would be changed without making any actual changes') do
     options[:test] = true
   end
 
   opts.on('-l', '--list', 'OPTIONAL: List out products and environments') do
     options[:list] = true
+  end
+
+  opts.on('--verbose', 'OPTIONAL: Show all security group rules in tables') do
+    options[:verbose] = true
   end
 
   opts.on('-d', '--debug', 'OPTIONAL: debug output') do
@@ -81,22 +90,197 @@ unless test?('Vominator is running in test mode. It will NOT make any changes.')
 end
 
 if options[:groups]
-  security_groups = Vominator::SecurityGroups.get_security_groups(options[:environment], options[:product], options[:groups])
-  # TODO: Report back if provided security groups dont exist
+  puke_security_groups = Vominator::SecurityGroups.get_security_groups(options[:environment], options[:product], options[:groups])
+  # If the user specified a filter, barf in the event a specified security group doesnt exist in puke
+  invalid_security_groups = options[:groups].reject{|g| puke_security_group_names.include? g}
+  if invalid_security_groups.count > 0
+    LOGGER.fatal("Unable to find the following security groups in your puke: #{invalid_security_groups.join(',')}")
+  end  
 else
-  security_groups = Vominator::SecurityGroups.get_security_groups(options[:environment], options[:product])
+  puke_security_groups = Vominator::SecurityGroups.get_security_groups(options[:environment], options[:product])
 end
 
-unless security_groups 
-  LOGGER.fatal('Unable to load security groups . Make sure the product is correctly defined for the environment you have selected.')
+unless puke_security_groups
+  LOGGER.fatal('Unable to load security groups . Make sure the product is correctly defined for the environment you have selected and that a security_groups.yaml file exists with at least one group defined.')
 end
 
-#TODO: Get security groups for environment from amazon and create if not test
+ec2_client = Aws::EC2::Client.new(region: puke_config['region_name'])
+
+
+#TODO: Get security groups for environment
+puke_security_group_names = puke_security_groups.map{|g| g.keys[0]}
+vpc_security_groups = Vominator::EC2.get_security_groups(ec2_client, puke_config['vpc_id'])
+vpc_security_group_names = vpc_security_groups.map{|g| g.group_name }
+
 #TODO: Report what groups we would create
-#TODO: Report what groups exist on amazon, but that we dont have defined
+new_security_group_names = puke_security_group_names.reject{|g| vpc_security_group_names.include? g}
+if new_security_group_names.count > 0
+  unless test?("Would create the following new security groups: #{new_security_group_names.join(',')}")
+    new_security_group_names.each do |security_group_name|
+	    #TODO: Automagically nuke the default outbound ACL for each security group
+      description = puke_security_groups.select{ |g| g.keys[0] == security_group_name}.first['description']
+      LOGGER.success("Successfully created #{security_group_name}") if Vominator::EC2.create_security_group(ec2_client, security_group_name, puke_config['vpc_id'], description)
+    end
+    # Sleep for just a second to allow amazon to converge
+    sleep(1)
+  end
+end
+
+#TODO: Report what groups that are defined on AWS and not in puke
+untracked_security_group_names = vpc_security_group_names.reject{|g| puke_security_group_names.include? g}
+if untracked_security_group_names.count > 0
+	LOGGER.warning("The following security groups exist in the AWS account but are not defined in your puke: #{untracked_security_group_names.join(',')}")
+end
+
+# Refresh our list of existing security groups now that we have created ones we need.
+vpc_security_groups = Vominator::EC2.get_security_groups(ec2_client, puke_config['vpc_id'])
+vpc_security_groups_id_lookup = Hash[vpc_security_groups.map{|g| [g.group_name, g.group_id]}]
 
 #TODO: Now that we know all groups exist, loop over each group
-  #TODO: Get existing ingress/egress rules
-  #TODO: Capture rules which exist but arent defined in our puke
+puke_security_groups.each do |puke_security_group|
+	puke_security_group_name = puke_security_group.keys[0]
+  vpc_security_group = vpc_security_groups.select{|g| g.group_name == puke_security_group_name}.first
+
+	# Create empty arrays if we havent specified either ingress or egress rules.
+	puke_security_group['ingress'] = [] unless puke_security_group['ingress'] && puke_security_group['ingress'].count > 0
+  puke_security_group['egress'] = [] unless puke_security_group['egress'] && puke_security_group['egress'].count > 0
+
+  if vpc_security_group
+		# Update environment tag if needed
+		environment_tag = vpc_security_group.tags.select{|t| t.key == 'Environment'}.first
+
+    environment_tag = nil if environment_tag.value != options[:environment] if environment_tag
+
+    unless environment_tag
+      unless test?("Would set environment tag to #{options[:environment]} for #{puke_security_group_name}")
+        Vominator::EC2.tag_resource(ec2_client, vpc_security_group.group_id, [{key: 'Environment', value: options[:environment]}])
+        LOGGER.info("Updated tags for #{puke_security_group_name}")
+      end
+    end
+
+		# Normalize the existing ingress rules for the security group.
+    vpc_ingress_rules = Array.new
+    vpc_security_group.ip_permissions.each do |rule|
+	    rule.ip_ranges.each do |ip_range|
+        vpc_ingress_rules.push({ :ip_protocol => rule.ip_protocol, :from_port => rule.from_port, :to_port => rule.to_port, :cidr_ip => ip_range.cidr_ip, :source_security_group_id => nil })
+	    end
+
+			rule.user_id_group_pairs.each do |group|
+        vpc_ingress_rules.push({ :ip_protocol => rule.ip_protocol, :from_port => rule.from_port, :to_port => rule.to_port, :cidr_ip => nil, :source_security_group_id => group.group_id })
+      end
+    end
+
+		# Normalize the rules that we defined in puke for the security group.
+		puke_ingress_rules = Array.new
+		cidr_block_regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$/
+
+		puke_security_group['ingress'].each do |rule|
+			if rule['ports'].to_s.include?('..')
+        from_port = rule['ports'].split('..')[0]
+				to_port = rule['ports'].split('..')[1]
+			else
+				from_port = rule['ports']
+				to_port = rule['ports']
+			end
+
+			if rule['source'] =~ cidr_block_regex
+        puke_ingress_rules.push({ :ip_protocol => rule['protocol'], :from_port => from_port.to_i, :to_port => to_port.to_i, :cidr_ip => rule['source'], :source_security_group_id => nil})
+			else rule['source']
+			  if vpc_security_groups_id_lookup[puke_security_group_name]
+          puke_ingress_rules.push({ :ip_protocol => rule['protocol'], :from_port => from_port.to_i, :to_port => to_port.to_i, :cidr_ip => nil, :source_security_group_id => vpc_security_groups_id_lookup[puke_security_group_name]})
+			  else
+				  LOGGER.fatal("Do not recognize #{rule['source']} as a valid cidr block and was unable to resolve this to a valid security group for #{rule} in #{puke_security_group_name}")
+				end
+			end
+		end
+
+		# Determie what new rules we need to add
+    ingress_to_create = puke_ingress_rules - vpc_ingress_rules
+		# Determine what rules we should delete
+		ingress_to_delete = vpc_ingress_rules - puke_ingress_rules
+
+		# Normalize the existing egress rules for the security group
+    vpc_egress_rules = Array.new
+		vpc_security_group.ip_permissions_egress.each do |rule|
+      rule.ip_ranges.each do |ip_range|
+        vpc_egress_rules.push({ :ip_protocol => rule.ip_protocol, :from_port => rule.from_port, :to_port => rule.to_port, :cidr_ip => ip_range.cidr_ip, :source_security_group_id => nil })
+      end
+      
+      rule.user_id_group_pairs.each do |group|
+        vpc_egress_rules.push({ :ip_protocol => rule.ip_protocol, :from_port => rule.from_port, :to_port => rule.to_port, :cidr_ip => nil, :source_security_group_id => group.group_id })
+      end
+		end
+    
+    # Normalize the rules that we defined in puke for the security group.
+    puke_egress_rules = Array.new
+    cidr_block_regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$/
+    
+    puke_security_group['egress'].each do |rule|
+      if rule['ports'].to_s.include?('..')
+        from_port = rule['ports'].split('..')[0]
+        to_port = rule['ports'].split('..')[1]
+      else
+        from_port = rule['ports']
+        to_port = rule['ports']
+      end
+      
+      if rule['source'] =~ cidr_block_regex
+        puke_egress_rules.push({ :ip_protocol => rule['protocol'], :from_port => from_port.to_i, :to_port => to_port.to_i, :cidr_ip => rule['source'], :source_security_group_id => nil})
+      else rule['source']
+      if vpc_security_groups_id_lookup[puke_security_group_name]
+        puke_egress_rules.push({ :ip_protocol => rule['protocol'], :from_port => from_port.to_i, :to_port => to_port.to_i, :cidr_ip => nil, :source_security_group_id => vpc_security_groups_id_lookup[puke_security_group_name]})
+      else
+        LOGGER.fatal("Do not recognize #{rule['source']} as a valid cidr block and was unable to resolve this to a valid security group for #{rule} in #{puke_security_group_name}")
+      end
+      end
+    end
+    
+    # Determie what new rules we need to add
+    egress_to_create = puke_egress_rules - vpc_egress_rules
+    # Determine what rules we should delete
+    egress_to_delete = vpc_egress_rules - puke_egress_rules
+		
+    table = Terminal::Table.new :title => puke_security_group_name.cyan, :headings => ['Type', 'Source', 'from port', 'to_port', 'Protocol', 'Action'], :style => {:width => 125} do |t|
+      ingress_to_create.each do |rule|
+	      source = rule[:cidr_ip] || rule[:source_security_group_id]
+	      t.add_row ['Inbound'.green, source.green, rule[:from_port].to_s.green, rule[:to_port].to_s.green, rule[:ip_protocol].green, 'Create'.green]
+      end
+
+      ingress_to_delete.each do |rule|
+        source = rule[:cidr_ip] || rule[:source_security_group_id]
+        t.add_row ['Inbound'.red, source.red, rule[:from_port].to_s.red, rule[:to_port].to_s.red, rule[:ip_protocol].red, 'Delete'.red]
+      end
+
+      if options[:verbose]
+        ((vpc_ingress_rules - ingress_to_create) - ingress_to_delete).each do |rule|
+	        source = rule[:cidr_ip] || rule[:source_security_group_id]
+          t.add_row ['Inbound', source, rule[:from_port].to_s, rule[:to_port].to_s, rule[:ip_protocol], nil]
+        end
+      end
+
+      egress_to_create.each do |rule|
+        source = rule[:cidr_ip] || rule[:source_security_group_id]
+        t.add_row ['Outbound'.green, source.green, rule[:from_port].to_s.green, rule[:to_port].to_s.green, rule[:ip_protocol].green, 'Create'.green]
+      end
+
+      egress_to_delete.each do |rule|
+        source = rule[:cidr_ip] || rule[:source_security_group_id]
+        t.add_row ['Outbound'.red, source.red, rule[:from_port].to_s.red, rule[:to_port].to_s.red, rule[:ip_protocol].red, 'Delete'.red]
+      end
+
+      if options[:verbose]
+        ((vpc_egress_rules - egress_to_create) - egress_to_delete).each do |rule|
+          source = rule[:cidr_ip] || rule[:source_security_group_id]
+          t.add_row ['Outbound', source, rule[:from_port].to_s, rule[:to_port].to_s, rule[:ip_protocol], nil]
+        end
+      end
+    end
+
+
+		LOGGER.info(table)
+  end
+
+  # ec2_client.authorize_security_group_ingress({group_id: 'sg-4842ed2f', cidr_ip: '0.0.0.0/0', ip_protocol: 'tcp', from_port: 81, to_port: 81})
   #TODO: Setup new Ingress/Egress rules
-  #TODO: Delete undefined rules if not defined
+  #TODO: Delete undefined rules if not defined and --delete is present
+end

@@ -4,6 +4,7 @@ require_relative 'constants'
 
 module Vominator
   class SecurityGroups
+
     def self.get_security_groups(environment, product, filter=false)
       if PUKE_CONFIG[environment]['products'].include? product
         config_file = File.expand_path("#{VOMINATOR_CONFIG['configuration_path']}/products/#{product}/security_groups.yaml")
@@ -19,6 +20,7 @@ module Vominator
         end
         return security_groups if security_groups.kind_of?(Array)
       end
-    end  
+    end
+
   end
 end

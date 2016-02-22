@@ -240,5 +240,14 @@ module Vominator
     def self.tag_resource(client, resource_id, tags)
       client.create_tags(resources: [resource_id], tags: tags)
     end
+
+    def self.get_security_groups(client, vpc_id)
+      return client.describe_security_groups(filters: [{name: 'vpc-id', values: [vpc_id]}]).first.security_groups
+    end
+
+    def self.create_security_group(client, name, vpc_id, description=nil)
+      return client.create_security_group(group_name: name, description: description || name, vpc_id: vpc_id)
+    end
+
   end
 end
