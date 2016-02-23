@@ -5,6 +5,11 @@ require_relative 'constants'
 
 module Vominator
   module EC2Info
+    def get(type)
+      InstanceInfo.new().get_instance(type)
+    end
+    module_function :get
+
     class InstanceInfo
       # The URI to JSON data from ec2instances.info
       @@uri = URI.parse('http://www.ec2instances.info/instances.json')
@@ -23,8 +28,8 @@ module Vominator
         load_instances()
       end
 
-      def get_instance_type(type)
-        InstanceType.new(@@instances.detect {|i| i['instance_type'] == type})
+      def get_instance(type)
+        Instance.new(@@instances.detect {|i| i['instance_type'] == type})
       end
 
       def load_instances()
@@ -57,7 +62,7 @@ module Vominator
       private :filepath_from_config
     end
 
-    class InstanceType
+    class Instance
       attr_accessor :raw
 
       def initialize(instance={})
