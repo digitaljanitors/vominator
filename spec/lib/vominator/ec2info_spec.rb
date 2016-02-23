@@ -37,6 +37,13 @@ describe Vominator::EC2Info, fakefs: true do
       end
     end
 
+    context 'when I get an instance type with ephemeral_devices' do
+      let (:itype) { ec2info.get_instance('m3.medium') }
+      it 'returns the correct device count' do
+        expect(itype.ephemeral_devices).to eq(1)
+      end
+    end
+
     context 'when I get an instance type with unknown virtualization is current gen' do
       let (:itype) { ec2info.get_instance_type('t2.micro') }
       it 'returns the correct virtualization_type' do

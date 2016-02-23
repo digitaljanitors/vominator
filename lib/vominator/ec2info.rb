@@ -65,7 +65,10 @@ module Vominator
       end
 
       def ephemeral_devices
-        self.raw['storage']['devices'] if not self.raw['storage'].nil? and self.raw['storage'].key? 'devices' else 0
+        device_count = if not self.raw['storage'].nil? and self.raw['storage'].key? 'devices'
+          self.raw['storage']['devices']
+        else 0
+        end
       end
 
       def virtualization_type
