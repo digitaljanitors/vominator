@@ -68,6 +68,21 @@ module Vominator
         self.raw['storage']['devices'] if not self.raw['storage'].nil? and self.raw['storage'].key? 'devices' else 0
       end
 
+      def virtualization_type
+        vt = case
+        when self.raw['linux_virtualization_types'].include?('HVM'), 
+             self.generation.eql?('current'),
+             self.instance_type.start_with?('cc2'),
+             self.instance_type.start_with?('hi1'),
+             self.instance_type.start_with?('hs1'),
+             self.instance_type.start_with?('cr1')
+          'hvm'
+        else
+          'paravirtual'
+        end
+      end
+
+
       def method_missing(name)
         self.raw[name.to_s] if self.raw.key? name.to_s
       end
