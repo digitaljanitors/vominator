@@ -28,7 +28,7 @@ module Vominator
       return resource.instances(filters: [{name: 'instance-id', values: [instance_id]}]).first
     end
 
-    def self.get_security_groups(resource, vpc_id)
+    def self.get_security_group_name_ids_hash(resource, vpc_id)
       security_groups = Hash.new
       resource.vpcs(filters: [{name: 'vpc-id', values: [vpc_id]}]).first.security_groups.each do |security_group|
         security_groups[security_group.group_name] = security_group.id
@@ -239,6 +239,62 @@ module Vominator
 
     def self.tag_resource(client, resource_id, tags)
       client.create_tags(resources: [resource_id], tags: tags)
+    end
+
+    def self.get_security_groups(client, vpc_id)
+      return client.describe_security_groups(filters: [{name: 'vpc-id', values: [vpc_id]}]).first.security_groups
+    end
+
+    def self.create_security_group(client, name, vpc_id, description=nil)
+      return client.create_security_group(group_name: name, description: description || name, vpc_id: vpc_id)
+    end
+
+    def self.create_security_group_rule(client,type,group_id,rule)
+      case type
+        when 'ingress'
+          if rule[:source_security_group_id]
+            client.authorize_security_group_ingress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], user_id_group_pairs: [{group_id: rule[:source_security_group_id]}]}]})
+          end
+
+          if rule[:cidr_ip]
+            client.authorize_security_group_ingress({group_id: group_id, cidr_ip: rule[:cidr_ip], ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port]})
+          end
+
+        when 'egress'
+          if rule[:source_security_group_id]
+            client.authorize_security_group_egress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], user_id_group_pairs: [{group_id: rule[:source_security_group_id]}]}]})
+          end
+
+          if rule[:cidr_ip]
+            client.authorize_security_group_egress({group_id: group_id, cidr_ip: rule[:cidr_ip], ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port]})
+          end
+        else
+          return false
+      end
+    end
+
+    def self.delete_security_group_rule(client,type,group_id,rule)
+      case type
+        when 'ingress'
+          if rule[:source_security_group_id]
+            client.revoke_security_group_ingress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], user_id_group_pairs: [{group_id: rule[:source_security_group_id]}]}]})
+          end
+      
+          if rule[:cidr_ip]
+            client.revoke_security_group_ingress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], ip_ranges: [{cidr_ip: rule[:cidr_ip]}]}]})
+          end
+    
+        when 'egress'
+          if rule[:source_security_group_id]
+            client.revoke_security_group_egress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], user_id_group_pairs: [{group_id: rule[:source_security_group_id]}]}]})
+          end
+      
+          if rule[:cidr_ip]
+            client.revoke_security_group_egress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], ip_ranges: [{cidr_ip: rule[:cidr_ip]}]}]})
+          end
+        else
+          return false
+      end
     end
   end
 end
