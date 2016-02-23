@@ -140,7 +140,7 @@ instances.each do |instance|
   fqdn = "#{hostname}.#{puke_config['domain']}"
   instance_type = instance['type'][options[:environment]]
   instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
-  instance_security_groups = instance['security_groups'].map { |sg| "#{options[:environment]}-#{sg}"}.uniq.sort
+  instance_security_groups = instance['security_groups'].map { |sg| sg}.uniq.sort
   ebs_optimized = instance['ebs_optimized'].nil? ? false : instance['ebs_optimized']
   source_dest_check = instance['source_dest_check'].nil? ? true : instance['source_dest_check']
   instance_ebs_volumes = instance['ebs'].nil? ? [] : instance['ebs']
