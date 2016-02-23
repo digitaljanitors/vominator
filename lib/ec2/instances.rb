@@ -37,11 +37,11 @@ OptionParser.new do |opts|
     options[:disable_term_protection] = true
   end
 
-  opts.on('--terminate', 'OPTIONAL: This will terminate the specified instances. Must be combined with -s') do
+  opts.on('--terminate', 'OPTIONAL: This will terminate the specified instances.') do
     options[:terminate] = true
   end
 
-  opts.on('--rebuild', 'OPTIONAL: This will terminate and relaunch the specified instances. Must be combined with -s') do
+  opts.on('--rebuild', 'OPTIONAL: This will terminate and relaunch the specified instances.') do
     options[:rebuild] = true
   end
   
@@ -62,7 +62,7 @@ OptionParser.new do |opts|
     opts.parse!
     throw Exception unless ((options.include? :environment) && (options.include? :product)) || options[:list]
     if options[:terminate] || options[:rebuild]
-      throw Exception unless (options[:disable_term_protection] && options[:servers])
+      throw Exception unless (options[:disable_term_protection])
     end
 
   rescue
@@ -137,7 +137,7 @@ vpc_security_groups = Vominator::EC2.get_security_group_name_ids_hash(ec2, puke_
 
 instances.each do |instance|
   hostname = instance.keys[0]
-  fqdn = "#{hostname}.#{options[:environment]}.#{puke_config['domain']}"
+  fqdn = "#{hostname}.#{puke_config['domain']}"
   instance_type = instance['type'][options[:environment]]
   instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
   instance_security_groups = instance['security_groups'].map { |sg| sg}.uniq.sort
@@ -168,8 +168,8 @@ instances.each do |instance|
   #Check to see if the subnet exists for the instance. If not we should create it.
   subnet = "#{instance_ip.rpartition('.')[0]}.0/24"
   unless existing_subnets[subnet]
-    unless test?("Would create a subnet for #{subnet} in #{instance['az']}")
-      existing_subnets[subnet] = Vominator::EC2.create_subnet(ec2, subnet, instance['az'], puke_config['vpc_id'])
+    unless test?("Would create a subnet for #{subnet} in #{instance['az']} and associate with the appropriate routing table")
+      existing_subnets[subnet] = Vominator::EC2.create_subnet(ec2, subnet, instance['az'], puke_config['vpc_id'], puke_config['route_tables'][instance['az']])
       LOGGER.success("Created #{subnet} in #{instance['az']} for #{fqdn}")
     end
   end

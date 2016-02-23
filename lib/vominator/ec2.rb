@@ -55,9 +55,17 @@ module Vominator
       return ami
     end
 
-    def self.create_subnet(resource, subnet, az, vpc_id)
+    def self.create_subnet(resource, subnet, az, vpc_id, route_table_id=nil)
       subnet = resource.vpcs(filters: [{name: 'vpc-id', values: [vpc_id]}]).first.create_subnet(:cidr_block => subnet, :availability_zone => az)
+      if route_table_id
+        route_table = Vominator::EC2.get_route_table(resource,route_table_id)
+        route_table.associate_with_subnet(subnet_id: subnet.subnet_id)
+      end
       return subnet
+    end
+
+    def self.get_route_table(resource, route_table_id)
+      return resource.route_tables(filters: [{name: 'route-table-id', values: [route_table_id]}]).first
     end
 
     def self.get_termination_protection(client, instance_id)

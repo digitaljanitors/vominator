@@ -133,13 +133,20 @@ Vominator::EC2.tag_resource(ec2_client, public_route_table.route_table_id,[{key:
 Vominator::VPC.create_internet_gateway_route(ec2_client, public_route_table.route_table_id, '0.0.0.0/0', gateway.internet_gateway_id)
 
 third_octet = 1
+
+route_tables = Hash.new
+route_tables['public'] = public_route_table.route_table_id
+
 availability_zones.each do |zone|
+
   private_route_table = Vominator::VPC.create_route_table(ec2_client, vpc.vpc_id)
+  route_tables[zone] = private_route_table.route_table_id
+
   Vominator::EC2.tag_resource(ec2_client, private_route_table.route_table_id,[{key: 'Name', value: "nat-#{options[:environment]}-#{zone}"}])
 
   public_subnet_cidr_block = "#{options[:cidr_block].split('.')[0]}.#{options[:cidr_block].split('.')[1]}.#{third_octet}.0/24"
   public_subnet = Vominator::VPC.create_subnet(ec2_client, vpc.vpc_id, public_subnet_cidr_block, zone)
-  
+
   Vominator::VPC.associate_route_table(ec2_client, public_subnet.subnet_id, public_route_table.route_table_id)
 
   public_ip = Vominator::EC2.allocate_public_ip(ec2_client)
@@ -147,7 +154,7 @@ availability_zones.each do |zone|
 
   Vominator::VPC.create_nat_gateway_route(ec2_client, private_route_table.route_table_id, '0.0.0.0/0', nat_gateway.nat_gateway_id)
 
-  third_octet += 1 
+  third_octet += 1
 end
 
 unless parent_zone
@@ -160,6 +167,7 @@ end
 config = {
     options[:environment] => {
         'vpc_id' => vpc.vpc_id,
+        'route_tables' => route_tables,
         'region_name' => options[:region],
         'zone' => environment_zone.hosted_zone.id.split('/')[2],
         'octet' => options[:cidr_block].split('.')[1],
