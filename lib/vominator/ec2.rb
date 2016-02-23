@@ -1,19 +1,20 @@
 require 'aws-sdk'
 require 'base64'
 require_relative 'constants'
+require_relative 'ec2info'
 
 module Vominator
   class EC2
     def self.get_virt_type(instance_type)
       begin
-        return EC2_INSTANCE_METADATA[instance_type.to_sym][:virtualization_type]
+        return Vominator::EC2Info.get(instance_type).virtualization_type
       rescue NoMethodError
         raise ArgumentError, 'You must specify a valid instance type'
       end
     end
 
     def self.get_ephemeral_dev_count(instance_type)
-      return EC2_INSTANCE_METADATA[instance_type.to_sym][:ephemeral_devices]
+      Vominator::EC2Info.get(instance_type).ephemeral_devices
     end
 
     def self.get_instances(resource)
