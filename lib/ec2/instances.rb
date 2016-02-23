@@ -169,7 +169,7 @@ instances.each do |instance|
   subnet = "#{instance_ip.rpartition('.')[0]}.0/24"
   unless existing_subnets[subnet]
     unless test?("Would create a subnet for #{subnet} in #{instance['az']} and associate with the appropriate routing table")
-      existing_subnets[subnet] = Vominator::EC2.create_subnet(ec2, subnet, instance['az'], puke_config['vpc_id'], instance['az'])
+      existing_subnets[subnet] = Vominator::EC2.create_subnet(ec2, subnet, instance['az'], puke_config['vpc_id'], puke_config['route_tables'][instance['az']])
       LOGGER.success("Created #{subnet} in #{instance['az']} for #{fqdn}")
     end
   end
