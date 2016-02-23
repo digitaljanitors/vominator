@@ -37,11 +37,11 @@ OptionParser.new do |opts|
     options[:disable_term_protection] = true
   end
 
-  opts.on('--terminate', 'OPTIONAL: This will terminate the specified instances. Must be combined with -s') do
+  opts.on('--terminate', 'OPTIONAL: This will terminate the specified instances.') do
     options[:terminate] = true
   end
 
-  opts.on('--rebuild', 'OPTIONAL: This will terminate and relaunch the specified instances. Must be combined with -s') do
+  opts.on('--rebuild', 'OPTIONAL: This will terminate and relaunch the specified instances.') do
     options[:rebuild] = true
   end
   
@@ -62,7 +62,7 @@ OptionParser.new do |opts|
     opts.parse!
     throw Exception unless ((options.include? :environment) && (options.include? :product)) || options[:list]
     if options[:terminate] || options[:rebuild]
-      throw Exception unless (options[:disable_term_protection] && options[:servers])
+      throw Exception unless (options[:disable_term_protection])
     end
 
   rescue
@@ -137,7 +137,7 @@ vpc_security_groups = Vominator::EC2.get_security_group_name_ids_hash(ec2, puke_
 
 instances.each do |instance|
   hostname = instance.keys[0]
-  fqdn = "#{hostname}.#{options[:environment]}.#{puke_config['domain']}"
+  fqdn = "#{hostname}.#{puke_config['domain']}"
   instance_type = instance['type'][options[:environment]]
   instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
   instance_security_groups = instance['security_groups'].map { |sg| "#{options[:environment]}-#{sg}"}.uniq.sort
