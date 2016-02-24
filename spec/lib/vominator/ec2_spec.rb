@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'vominator/ec2'
 require 'pry'
 describe Vominator::EC2 do
-
+  cwd = Dir.pwd()
   before(:each) do
     @puke_variables = Vominator.get_puke_variables('test')
     Aws.config[:stub_responses] = true
@@ -165,7 +165,8 @@ describe Vominator::EC2 do
     @ec2 = Aws::EC2::Resource.new(client: @ec2_client)
   end
 
-  describe 'get_virt_type' do
+  describe 'get_virt_type', fakefs: true do
+    before(:each) { FakeFS::FileSystem.clone(cwd, '/') }
     context 'when I pass a valid instance_type' do
       let (:instance_type) {Vominator::EC2.get_virt_type('m3.medium')}
 
@@ -188,7 +189,8 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'get_ephemeral_dev_count' do
+  describe 'get_ephemeral_dev_count', fakefs: true do
+    before(:each) { FakeFS::FileSystem.clone(cwd, '/') }
     context 'when I pass a valid instance_type' do
       let (:ephemeral_dev_count) { Vominator::EC2.get_ephemeral_dev_count('m3.medium')}
 
@@ -211,7 +213,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'get_instances' do
+  describe 'get_instances', fakefs: true do
     context 'when I pass a valid ec2 resource' do
       let (:instances) { Vominator::EC2.get_instances(@ec2) }
 
@@ -234,7 +236,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'get_instance' do
+  describe 'get_instance', fakefs: true do
     context 'when I pass a valid ec2 resource and a valid instance ID' do
       let (:instance) { Vominator::EC2.get_instance(@ec2, 'i-1968d168')}
 
@@ -252,7 +254,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'get_security_group_name_ids_hash' do
+  describe 'get_security_group_name_ids_hash', fakefs: true do
     context 'when I pass a valid resource and vpc_id' do
       let (:security_groups) { Vominator::EC2.get_security_group_name_ids_hash(@ec2, @puke_variables['vpc_id'])}
 
@@ -271,7 +273,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'get_subnets' do
+  describe 'get_subnets', fakefs: true do
     context 'when I pass a valid resource and vpc_id' do
       let (:subnets) { Vominator::EC2.get_subnets(@ec2, @puke_variables['vpc_id'])}
 
@@ -291,7 +293,8 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'get_ami' do
+  describe 'get_ami', fakefs: true do
+    before(:each) { FakeFS::FileSystem.clone(cwd, '/') }
     context 'when I pass a valid puke_config, HVM instance type, and linux as the os' do
       let (:ami) { Vominator::EC2.get_ami(@puke_variables, 'm3.medium', 'linux')}
 
@@ -341,7 +344,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'create_subnet' do
+  describe 'create_subnet', fakefs: true do
     context 'when I pass a valid resource, subnet, az, and vpc_id' do
       let (:subnet) { Vominator::EC2.create_subnet(@ec2, '10.203.21.0/24', 'us-east-1a', @puke_variables['vpc_id'])}
 
@@ -358,7 +361,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'get_termination_protection' do
+  describe 'get_termination_protection', fakefs: true do
     context 'when I pass a valid client, instance_id and the instance is protected from termination' do
       let (:termination_protection) { Vominator::EC2.get_termination_protection(@ec2_client, 'i-1968d168')}
 
@@ -388,7 +391,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'set_termination_protection' do
+  describe 'set_termination_protection', fakefs: true do
     context 'When I pass a valid client, instance_id and set the instance protection to true' do
       let (:termination_protection) { Vominator::EC2.set_termination_protection(@ec2_client, 'i-1968d168', true)}
 
@@ -417,7 +420,7 @@ describe Vominator::EC2 do
       xit 'do something'
     end
   end
-  describe 'get_instance_state' do
+  describe 'get_instance_state', fakefs: true do
     context 'when I pass a valid resource and instance_id' do
       let (:instance_state) { Vominator::EC2.get_instance_state(@ec2, 'i-1968d168') }
 
@@ -455,7 +458,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'set_instance_type' do
+  describe 'set_instance_type', fakefs: true do
     context 'when I pass a valid resource, instance_id, and instance_type' do
       let (:instance_type) { Vominator::EC2.set_instance_type(@ec2, 'i-1968d168', 'm3.large', 'sample-api-1.test.example.com')}
 
@@ -481,7 +484,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'assign_public_ip' do
+  describe 'assign_public_ip', fakefs: true do
     context 'when I pass a valid resource and instance_id' do
       let (:public_ip) { Vominator::EC2.assign_public_ip(@ec2_client, 'i-1968d168' )}
 
@@ -499,7 +502,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'remove_public_ip' do
+  describe 'remove_public_ip', fakefs: true do
     context 'when I pass a valid resource and instance_id' do
       let (:removed_public_ip) { Vominator::EC2.remove_public_ip(@ec2_client, 'i-1968d168' )}
 
@@ -517,7 +520,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'set_source_dest_check' do
+  describe 'set_source_dest_check', fakefs: true do
     context 'when I pass a valid resource, instance_id and enable source destination checking' do
       let (:source_dest_check) { Vominator::EC2.set_source_dest_check(@ec2, 'i-1968d168', true )}
 
@@ -564,7 +567,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'set_ebs_optimized' do
+  describe 'set_ebs_optimized', fakefs: true do
     context 'when I pass a valid resource, instance_id and enable EBS optimization' do
       let (:ebs_optimized) { Vominator::EC2.set_ebs_optimized(@ec2, 'i-1968d168', true, 'sample-api-1.example.com' )}
 
@@ -612,7 +615,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'set_security_groups' do
+  describe 'set_security_groups', fakefs: true do
     context 'when I pass a valid resource, instance_id, security_groups, and vpc_security_groups' do
       vpc_security_groups = Hash.new
       vpc_security_groups['test-sample-api-server'] = 'sg-11111'
@@ -659,7 +662,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'get_ebs_volume' do
+  describe 'get_ebs_volume', fakefs: true do
     context 'when I pass a valid resource and ebs_volume_id' do
       let (:volume) { Vominator::EC2.get_ebs_volume(@ec2, 'vol-11111') }
 
@@ -677,7 +680,7 @@ describe Vominator::EC2 do
 
   end
 
-  describe 'get_instance_ebs_volumes' do
+  describe 'get_instance_ebs_volumes', fakefs: true do
     context 'when I pass a valid resource and instance id' do
       let (:volumes) { Vominator::EC2.get_instance_ebs_volumes(@ec2, 'i-1968d168') }
 
@@ -695,7 +698,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'add_ebs_volume' do
+  describe 'add_ebs_volume', fakefs: true do
     context 'when I pass a valid resource, instance_id, volume_type, volume_size, and mount_point)' do
       let (:volume) { Vominator::EC2.add_ebs_volume(@ec2, 'i-1968d168', 'magnetic', 100, 'sdf')}
 
@@ -713,7 +716,8 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'get_ephemeral_devices' do
+  describe 'get_ephemeral_devices', fakefs: true do
+    before(:each) { FakeFS::FileSystem.clone(cwd, '/') }
     context 'when I pass a valid instance type' do
       let (:devices) { Vominator::EC2.get_ephemeral_devices('m3.medium') }
 
@@ -731,7 +735,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'create_instance' do
+  describe 'create_instance', fakefs: true do
     context 'when I pass a valid resource, hostname, environment, ami, subnet id, instance type, keypair name, private ip, az and security groups' do
       let (:instance) { Vominator::EC2.create_instance(@ec2, 'sample-api-1','test','ami-111111','sub-11111','m3.medium','test@example.com','10.203.41.21','us-east-1c',['sg-11111'],'',false,nil)}
 
@@ -759,7 +763,7 @@ describe Vominator::EC2 do
     end
   end
 
-  describe 'terminate_instance' do
+  describe 'terminate_instance', fakefs: true do
     context 'when I pass a valid resource and instance id' do
       let (:instance) { Vominator::EC2.terminate_instance(@ec2, 'i-1968d168')}
 
