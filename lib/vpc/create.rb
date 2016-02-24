@@ -74,7 +74,9 @@ end
 
 puke_config = Vominator.get_puke_variables(options[:environment])
 
-unless puke_config
+if puke_config
+  LOGGER.fatal("An environment with the name of #{options[:environment]} is already defined. Please choose a different name")
+else  
   puke_config = Hash.new
   puke_config['region_name'] = options[:region]
 end
