@@ -172,7 +172,7 @@ puke_security_groups.each do |puke_security_group|
 
 		# Normalize the rules that we defined in puke for the security group.
 		puke_ingress_rules = Array.new
-		cidr_block_regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$/
+		cidr_block_regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[0-2][0-9]|3[0-2]))$/
 
 		puke_security_group['ingress'].each do |rule|
       #TODO: Normalize all to -1 for ip_protocol
@@ -187,8 +187,8 @@ puke_security_groups.each do |puke_security_group|
 			if rule['source'] =~ cidr_block_regex
         puke_ingress_rules.push({ :ip_protocol => rule['protocol'], :from_port => from_port.to_i, :to_port => to_port.to_i, :cidr_ip => rule['source'], :source_security_group_id => nil})
 			else rule['source']
-			  if vpc_security_groups_id_lookup[puke_security_group_name]
-          group_id = vpc_security_groups_id_lookup[puke_security_group_name]
+			  if vpc_security_groups_id_lookup[rule['source']]
+          group_id = vpc_security_groups_id_lookup[rule['source']]
           puke_ingress_rules.push({ :ip_protocol => rule['protocol'], :from_port => from_port.to_i, :to_port => to_port.to_i, :cidr_ip => nil, :source_security_group_id => group_id, :source_security_group_name => vpc_security_groups_name_lookup[group_id] })
 			  else
 				  LOGGER.fatal("Do not recognize #{rule['source']} as a valid cidr block and was unable to resolve this to a valid security group for #{rule} in #{puke_security_group_name}")
@@ -207,17 +207,17 @@ puke_security_groups.each do |puke_security_group|
 			#TODO: Normalize -1 to all for ip_protocol
       #TODO: if -1 for ip_protocol set :from_port and to_ports
       rule.ip_ranges.each do |ip_range|
-        vpc_egress_rules.push({ :ip_protocol => rule.ip_protocol, :from_port => rule.from_port, :to_port => rule.to_port, :cidr_ip => ip_range.cidr_ip, :source_security_group_id => nil })
+        vpc_egress_rules.push({ :ip_protocol => rule.ip_protocol, :from_port => rule.from_port, :to_port => rule.to_port, :cidr_ip => ip_range.cidr_ip, :destination_security_group_id => nil })
       end
       
       rule.user_id_group_pairs.each do |group|
-        vpc_egress_rules.push({ :ip_protocol => rule.ip_protocol, :from_port => rule.from_port, :to_port => rule.to_port, :cidr_ip => nil, :source_security_group_id => group.group_id, :source_security_group_name => vpc_security_groups_name_lookup[group.group_id] })
+        vpc_egress_rules.push({ :ip_protocol => rule.ip_protocol, :from_port => rule.from_port, :to_port => rule.to_port, :cidr_ip => nil, :destination_security_group_id => group.group_id, :destination_security_group_name => vpc_security_groups_name_lookup[group.group_id] })
       end
 		end
     
     # Normalize the rules that we defined in puke for the security group.
     puke_egress_rules = Array.new
-    cidr_block_regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$/
+    cidr_block_regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[0-2][0-9]|3[0-2]))$/
     
     puke_security_group['egress'].each do |rule|
       #TODO: Normalize all to -1 for ip_protocol
@@ -228,15 +228,15 @@ puke_security_groups.each do |puke_security_group|
         from_port = rule['ports']
         to_port = rule['ports']
       end
-      
-      if rule['source'] =~ cidr_block_regex
-        puke_egress_rules.push({ :ip_protocol => rule['protocol'], :from_port => from_port.to_i, :to_port => to_port.to_i, :cidr_ip => rule['source'], :source_security_group_id => nil})
-      else rule['source']
-      if vpc_security_groups_id_lookup[puke_security_group_name]
-        group_id = vpc_security_groups_id_lookup[puke_security_group_name]
-        puke_egress_rules.push({ :ip_protocol => rule['protocol'], :from_port => from_port.to_i, :to_port => to_port.to_i, :cidr_ip => nil, :source_security_group_id => group_id, :source_security_group_name => vpc_security_groups_name_lookup[group_id] })
+
+      if rule['destination'] =~ cidr_block_regex
+        puke_egress_rules.push({ :ip_protocol => rule['protocol'], :from_port => from_port.to_i, :to_port => to_port.to_i, :cidr_ip => rule['destination'], :destination_security_group_id => nil})
+      else rule['destination']
+      if vpc_security_groups_id_lookup[rule['destination']]
+        group_id = vpc_security_groups_id_lookup[rule['destination']]
+        puke_egress_rules.push({ :ip_protocol => rule['protocol'], :from_port => from_port.to_i, :to_port => to_port.to_i, :cidr_ip => nil, :destination_security_group_id => group_id, :destination_security_group_name => vpc_security_groups_name_lookup[group_id] })
       else
-        LOGGER.fatal("Do not recognize #{rule['source']} as a valid cidr block and was unable to resolve this to a valid security group for #{rule} in #{puke_security_group_name}")
+        LOGGER.fatal("Do not recognize #{rule['destination']} as a valid cidr block and was unable to resolve this to a valid security group for #{rule} in #{puke_security_group_name}")
       end
       end
     end
@@ -265,19 +265,19 @@ puke_security_groups.each do |puke_security_group|
       end
 
       egress_to_create.each do |rule|
-        source = rule[:cidr_ip] || rule[:source_security_group_name]
-        t.add_row ['Outbound'.green, source.green, rule[:from_port].to_s.green, rule[:to_port].to_s.green, rule[:ip_protocol].green, 'Create'.green]
+        destination = rule[:cidr_ip] || rule[:destination_security_group_name]
+        t.add_row ['Outbound'.green, destination.green, rule[:from_port].to_s.green, rule[:to_port].to_s.green, rule[:ip_protocol].green, 'Create'.green]
       end
 
       egress_to_delete.each do |rule|
-        source = rule[:cidr_ip] || rule[:source_security_group_name]
-        t.add_row ['Outbound'.red, source.red, rule[:from_port].to_s.red, rule[:to_port].to_s.red, rule[:ip_protocol].red, 'Delete'.red]
+        destination = rule[:cidr_ip] || rule[:destination_security_group_name]
+        t.add_row ['Outbound'.red, destination.red, rule[:from_port].to_s.red, rule[:to_port].to_s.red, rule[:ip_protocol].red, 'Delete'.red]
       end
 
       if options[:verbose]
         ((vpc_egress_rules - egress_to_create) - egress_to_delete).each do |rule|
-          source = rule[:cidr_ip] || rule[:source_security_group_name]
-          t.add_row ['Outbound', source, rule[:from_port].to_s, rule[:to_port].to_s, rule[:ip_protocol], nil]
+          destination = rule[:cidr_ip] || rule[:destination_security_group_name]
+          t.add_row ['Outbound', destination, rule[:from_port].to_s, rule[:to_port].to_s, rule[:ip_protocol], nil]
         end
       end
     end

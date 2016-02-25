@@ -266,16 +266,16 @@ module Vominator
           end
 
           if rule[:cidr_ip]
-            client.authorize_security_group_ingress({group_id: group_id, cidr_ip: rule[:cidr_ip], ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port]})
+            client.authorize_security_group_ingress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], ip_ranges: [{cidr_ip: rule[:cidr_ip]}]}]})
           end
 
         when 'egress'
-          if rule[:source_security_group_id]
-            client.authorize_security_group_egress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], user_id_group_pairs: [{group_id: rule[:source_security_group_id]}]}]})
+          if rule[:destination_security_group_id]
+            client.authorize_security_group_egress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], user_id_group_pairs: [{group_id: rule[:destination_security_group_id]}]}]})
           end
 
           if rule[:cidr_ip]
-            client.authorize_security_group_egress({group_id: group_id, cidr_ip: rule[:cidr_ip], ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port]})
+            client.authorize_security_group_egress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], ip_ranges: [{cidr_ip: rule[:cidr_ip]}]}]})
           end
         else
           return false
@@ -294,8 +294,8 @@ module Vominator
           end
     
         when 'egress'
-          if rule[:source_security_group_id]
-            client.revoke_security_group_egress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], user_id_group_pairs: [{group_id: rule[:source_security_group_id]}]}]})
+          if rule[:destination_security_group_id]
+            client.revoke_security_group_egress({group_id: group_id, ip_permissions: [{ip_protocol: rule[:ip_protocol], from_port: rule[:from_port], to_port: rule[:to_port], user_id_group_pairs: [{group_id: rule[:destination_security_group_id]}]}]})
           end
       
           if rule[:cidr_ip]
