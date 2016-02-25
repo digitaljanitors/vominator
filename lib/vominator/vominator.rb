@@ -18,11 +18,18 @@ module Vominator
   def self.get_puke_config(puke_dir)
     if File.exist?(puke_dir)
       config_file = "#{puke_dir}/config.yaml"
-      puke_config = YAML.load(File.read(config_file))
+      puke_config = nil
+      if File.exist?(config_file)
+        puke_config = YAML.load(File.read(config_file))
+      end 
     else
-      raise("Unable to open puke configuration at #{puke_dir}")
+      raise("Unable to open puke directory at #{puke_dir}")
     end
-    return puke_config if puke_config.kind_of?(Hash)
+    if puke_config.kind_of?(Hash)
+      return puke_config
+    else
+      return {}
+    end  
   end
 
   def self.get_key_pair(vominator_config)
@@ -30,8 +37,12 @@ module Vominator
   end
 
   def self.get_puke_variables(environment)
-    data = PUKE_CONFIG[environment]
-    return data
+    if environment
+      data = PUKE_CONFIG[environment]
+      return data
+    else
+      return nil
+    end  
   end
 
   def self.yesno?(prompt: 'Continue?', default: true)
