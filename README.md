@@ -22,7 +22,9 @@ access_key_id: AWS_SECRET_KEY
 secret_access_key: AWS_SECRET_ACCESS_KEY
 configuration_path: Location to puke
 key_pair_name: infrastructure@example.com
+instances_file: Location for cache file IE /Users/foo/.vominator/instances-metadata
 ```
+
 ## Usage
 
 Everything with Vominator revolves around the concept of defining products. These products are a logical grouping of resources that describe how your product is deployed and accessed. These products are then associated with an environment so that you can quickly replicate resources between VPCs.
