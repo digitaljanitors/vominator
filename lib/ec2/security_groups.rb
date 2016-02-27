@@ -175,6 +175,13 @@ puke_security_groups.each do |puke_security_group|
 		cidr_block_regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[0-2][0-9]|3[0-2]))$/
 
 		puke_security_group['ingress'].each do |rule|
+
+			# If this specific rule is marked for specific environments and this one isnt it then skip over it.
+			if rule['environments'] && !rule['environments'].include?(options[:environment])
+				LOGGER.info("Skipping over #{rule} as its not marked for creation in #{options[:environment]}")
+				next
+			end
+
       #TODO: Normalize all to -1 for ip_protocol
 			if rule['ports'].to_s.include?('..')
         from_port = rule['ports'].split('..')[0]
@@ -220,6 +227,13 @@ puke_security_groups.each do |puke_security_group|
     cidr_block_regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[0-2][0-9]|3[0-2]))$/
     
     puke_security_group['egress'].each do |rule|
+
+	    # If this specific rule is marked for specific environments and this one isnt it then skip over it.
+	    if rule['environments'] && !rule['environments'].include?(options[:environment])
+		    LOGGER.info("Skipping over #{rule} as its not marked for creation in #{options[:environment]}")
+		    next
+	    end
+
       #TODO: Normalize all to -1 for ip_protocol
       if rule['ports'].to_s.include?('..')
         from_port = rule['ports'].split('..')[0]
