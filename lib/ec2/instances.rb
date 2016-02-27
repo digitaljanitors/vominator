@@ -138,7 +138,7 @@ vpc_security_groups = Vominator::EC2.get_security_group_name_ids_hash(ec2, puke_
 instances.each do |instance|
   hostname = instance.keys[0]
   fqdn = "#{hostname}.#{puke_config['domain']}"
-  instance_type = instance['type'][options[:environment]]
+  instance_type = instance['type'][options[:environment]] || instance['type']
   instance_ip = instance['ip'].sub('OCTET',puke_config['octet'])
   instance_security_groups = instance['security_groups'].map { |sg| sg}.uniq.sort
   ebs_optimized = instance['ebs_optimized'].nil? ? false : instance['ebs_optimized']
