@@ -113,7 +113,7 @@ unless instances
   LOGGER.fatal('Unable to load instances. Make sure the product is correctly defined for the environment you have selected.')
 end
 
-#Get ec2 connection, which is then passed to specific functions. Maybe a better way to do thisi?
+#Get ec2 connection, which is then passed to specific functions. Maybe a better way to do this?
 Aws.config[:credentials] = Aws::SharedCredentials.new(:profile_name => puke_config['account'])
 ec2 = Aws::EC2::Resource.new(region: puke_config['region_name'])
 ec2_client = Aws::EC2::Client.new(region: puke_config['region_name'])
@@ -147,6 +147,7 @@ instances.each do |instance|
   instance_ebs_volumes = instance['ebs'].nil? ? [] : instance['ebs']
   key_name = Vominator.get_key_pair(VOMINATOR_CONFIG)
   ssm_documents = instance['ssm_documents'].nil? ? [] : instance['ssm_documents']
+  instance_az = instance['az'][options[:environment]] || instance['az']
 
   LOGGER.info("Working on #{fqdn}")
 
@@ -169,9 +170,9 @@ instances.each do |instance|
   #Check to see if the subnet exists for the instance. If not we should create it.
   subnet = "#{instance_ip.rpartition('.')[0]}.0/24"
   unless existing_subnets[subnet]
-    unless test?("Would create a subnet for #{subnet} in #{instance['az']} and associate with the appropriate routing table")
-      existing_subnets[subnet] = Vominator::EC2.create_subnet(ec2, subnet, instance['az'], puke_config['vpc_id'], puke_config['route_tables'][instance['az']])
-      LOGGER.success("Created #{subnet} in #{instance['az']} for #{fqdn}")
+    unless test?("Would create a subnet for #{subnet} in #{instance_az} and associate with the appropriate routing table")
+      existing_subnets[subnet] = Vominator::EC2.create_subnet(ec2, subnet, instance_az, puke_config['vpc_id'], puke_config['route_tables'][instance_az])
+      LOGGER.success("Created #{subnet} in #{instance_az} for #{fqdn}")
     end
   end
 
@@ -350,7 +351,7 @@ instances.each do |instance|
     security_group_ids = instance_security_groups.map {|sg| vpc_security_groups[sg] }
 
     unless test?("Would create #{fqdn}")
-      ec2_instance = Vominator::EC2.create_instance(ec2, hostname, options[:environment], ami, existing_subnets[subnet].id, instance_type, key_name, instance_ip, instance['az'], security_group_ids, user_data, ebs_optimized, instance['iam_profile'])
+      ec2_instance = Vominator::EC2.create_instance(ec2, hostname, options[:environment], ami, existing_subnets[subnet].id, instance_type, key_name, instance_ip, instance_az, security_group_ids, user_data, ebs_optimized, instance['iam_profile'])
       if ec2_instance
         LOGGER.success("Succesfully created #{fqdn}")
         ec2_instances[instance_ip] = {:instance_id => ec2_instance.id, :security_groups => ec2_instance.security_groups.map { |sg| sg.group_name}}
