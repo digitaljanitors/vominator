@@ -1,5 +1,6 @@
 ---
 test:
+  account: example-account
   vpc_id: vpc-ada2d4c8
   region_name: us-east-1
   zone: Z2IOTRJNNABNJ

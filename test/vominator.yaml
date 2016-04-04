@@ -1,6 +1,4 @@
 ---
-access_key_id: DUMMY_ACCESS_KEY
-secret_access_key: DUMMY_SECRET_KEY
 configuration_path: test/puke
 key_pair_name: ci@example.com
 chef_client_key: ci.pem
