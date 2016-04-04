@@ -85,7 +85,7 @@ else
   puke_config['region_name'] = options[:region]
 end
 
-Aws.config[:credentials] = Aws::SharedCredentials.new(:profile_name => options['account'])
+Aws.config[:credentials] = Aws::SharedCredentials.new(:profile_name => options[:account])
 ec2_client = Aws::EC2::Client.new(region: puke_config['region_name'])
 r53_client = Aws::Route53::Client.new(region: puke_config['region_name'])
 
@@ -130,6 +130,8 @@ end
 
 vpc = Vominator::VPC.create_vpc(ec2_client,options[:cidr_block])
 
+Vominator::EC2.tag_resource(ec2_client, vpc.vpc_id,[{key: 'Name', value: fqdn}])
+
 gateway = Vominator::VPC.create_internet_gateway(ec2_client)
 
 Vominator::VPC.attach_internet_gateway(ec2_client, gateway.internet_gateway_id, vpc.vpc_id)
@@ -151,6 +153,13 @@ availability_zones.each do |zone|
 
   Vominator::EC2.tag_resource(ec2_client, private_route_table.route_table_id,[{key: 'Name', value: "nat-#{options[:environment]}-#{zone}"}])
 
+  # Seed Initial Private Subnet
+  private_subnet_cidr_block = "#{options[:cidr_block].split('.')[0]}.#{options[:cidr_block].split('.')[1]}.1#{third_octet}.0/24"
+  private_subnet = Vominator::VPC.create_subnet(ec2_client, vpc.vpc_id, private_subnet_cidr_block, zone)
+
+  Vominator::VPC.associate_route_table(ec2_client, private_subnet.subnet_id, private_route_table.route_table_id)
+
+  # Seed Initial Public Subnet
   public_subnet_cidr_block = "#{options[:cidr_block].split('.')[0]}.#{options[:cidr_block].split('.')[1]}.#{third_octet}.0/24"
   public_subnet = Vominator::VPC.create_subnet(ec2_client, vpc.vpc_id, public_subnet_cidr_block, zone)
 
