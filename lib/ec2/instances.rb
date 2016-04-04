@@ -29,10 +29,6 @@ OptionParser.new do |opts|
     options[:test] = true
   end
 
-  opts.on('--fix-security-groups', 'OPTIONAL: Fix an instances security groups') do
-    options[:fix_security_groups] = true
-  end
-
   opts.on('--disable-term-protection', 'OPTIONAL: This will disable termination protection on the targeted instances') do
     options[:disable_term_protection] = true
   end
@@ -291,7 +287,7 @@ instances.each do |instance|
           LOGGER.info("#{fqdn} is missing the following security groups: #{sg_missing.join(', ')}")
           updated_groups = instance_security_groups - Vominator::EC2.set_security_groups(ec2, ec2_instance.id, instance_security_groups, vpc_security_groups)
           if updated_groups.count > 0
-            LOGGER.fatal "Failed to set #{updated_groups.join(', ')} for #{fqdn}"
+            LOGGER.warning "Failed to set #{updated_groups.join(', ')} for #{fqdn}"
           else
             LOGGER.success "Succesfully set security groups for #{fqdn}"
           end
@@ -348,8 +344,7 @@ instances.each do |instance|
 
   else #The instance does not exist, in which case we want to create it.
     user_data = Vominator::Instances.generate_cloud_config(hostname, options[:environment], instance['family'], instance['chef_roles'], instance['chef_recipes'])
-    security_group_ids = instance_security_groups.map {|sg| vpc_security_groups[sg] }
-
+    security_group_ids = instance_security_groups.map {|sg| vpc_security_groups[sg] }.compact
     unless test?("Would create #{fqdn}")
       ec2_instance = Vominator::EC2.create_instance(ec2, hostname, options[:environment], ami, existing_subnets[subnet].id, instance_type, key_name, instance_ip, instance_az, security_group_ids, user_data, ebs_optimized, instance['iam_profile'])
       if ec2_instance
