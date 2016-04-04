@@ -23,8 +23,6 @@ describe Vominator do
       subject { vominator_config }
 
       it { is_expected.not_to be false }
-      it { is_expected.to include('access_key_id' => 'DUMMY_ACCESS_KEY') }
-      it { is_expected.to include('secret_access_key' => 'DUMMY_SECRET_KEY') }
       it { is_expected.to include('configuration_path' => 'test/puke') }
       it { is_expected.to include('key_pair_name' => 'ci@example.com') }
       it { is_expected.to include('chef_client_key' => 'ci.pem') }

@@ -113,7 +113,8 @@ unless instances
   LOGGER.fatal('Unable to load instances. Make sure the product is correctly defined for the environment you have selected.')
 end
 
-#Get ec2 connection, which is then passed to specific functions. Maybe a better way to do this?
+#Get ec2 connection, which is then passed to specific functions. Maybe a better way to do thisi?
+Aws.config[:credentials] = Aws::SharedCredentials.new(:profile_name => puke_config['account'])
 ec2 = Aws::EC2::Resource.new(region: puke_config['region_name'])
 ec2_client = Aws::EC2::Client.new(region: puke_config['region_name'])
 

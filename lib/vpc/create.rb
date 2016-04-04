@@ -31,7 +31,11 @@ OptionParser.new do |opts|
   opts.on('--cidr-block CIDR Block', 'REQUIRED: The network block for the new environment. This must be a /16 and the second octet should be unique for this environment. IE. 10.123.0.0/16') do |value|
     options[:cidr_block] = value
   end
-  
+
+  opts.on('--account ACCOUNT', 'REQUIRED: The AWS account that you want to create this VPC in') do |value|
+    options[:account] = value
+  end
+
   #opts.on('-t', '--test', 'OPTIONAL: Test run. Show what would be changed without making any actual changes') do
   #  options[:test] = true
   #end
@@ -52,7 +56,7 @@ OptionParser.new do |opts|
   begin
     opts.parse!
     ## Validate Data Inputs
-    throw Exception unless ((options.include? :environment) && (options.include? :region) && (options.include? :parent_domain) && (options.include? :cidr_block)) || options[:list]
+    throw Exception unless ((options.include? :environment) && (options.include? :region) && (options.include? :parent_domain) && (options.include? :cidr_block) && (options.include? :account)) || options[:list]
   rescue
     puts opts
     exit
@@ -81,6 +85,7 @@ else
   puke_config['region_name'] = options[:region]
 end
 
+Aws.config[:credentials] = Aws::SharedCredentials.new(:profile_name => options['account'])
 ec2_client = Aws::EC2::Client.new(region: puke_config['region_name'])
 r53_client = Aws::Route53::Client.new(region: puke_config['region_name'])
 
@@ -168,6 +173,7 @@ end
 
 config = {
     options[:environment] => {
+        'account' => options[:account],
         'vpc_id' => vpc.vpc_id,
         'route_tables' => route_tables,
         'region_name' => options[:region],
