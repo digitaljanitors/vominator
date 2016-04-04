@@ -58,6 +58,7 @@ unless test?('Vominator is running in test mode. It will NOT make any changes.')
   end
 end
 
+Aws.config[:credentials] = Aws::SharedCredentials.new(:profile_name => puke_config['account'])
 ssm = Aws::SSM::Client.new(region: puke_config['region_name'])
 
 aws_documents = Vominator::SSM.get_documents(ssm)

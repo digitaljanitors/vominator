@@ -18,8 +18,6 @@ See Usage for details about puke
 2. Create ~/.vominator.yaml
 ```
 ---
-access_key_id: AWS_SECRET_KEY
-secret_access_key: AWS_SECRET_ACCESS_KEY
 configuration_path: Location to puke
 key_pair_name: infrastructure@example.com
 instances_file: Location for cache file IE /Users/foo/.vominator/instances-metadata
@@ -69,6 +67,7 @@ Usage: vominate vpc create [options]
         --parent-domain PARENT DOMAIN
                                      REQUIRED: The parent domain name that will be used to create a seperate subdomain zone file for the new environment. IE, if you provide foo.org and your environment as bar, this will yield a new Route 53 zone file called bar.foo.org
         --cidr-block CIDR Block      REQUIRED: The network block for the new environment. This must be a /16 and the second octet should be unique for this environment. IE. 10.123.0.0/16
+        --account ACCOUNT            REQUIRED: The AWS account that you want to create this VPC in
     -d, --debug                      OPTIONAL: debug output
     -h, --help                       OPTIONAL: Display this screen 
 ```
