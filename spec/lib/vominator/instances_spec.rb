@@ -78,7 +78,7 @@ describe Vominator::Instances do
 
   describe 'generate_cloud_config' do
     context 'when I pass a valid hostname, environment, family, roles, and recipes' do
-      let (:cloud_config) { Vominator::Instances.generate_cloud_config('sample-api-1', 'test', 'linux', ['role1'], ['recipe1'] )}
+      let (:cloud_config) { Vominator::Instances.generate_cloud_config('sample-api-1', 'test', 'test', 'linux', ['role1'], ['recipe1'] )}
 
       subject { cloud_config }
       it 'should return a rendered cloud_config' do
