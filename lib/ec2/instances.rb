@@ -343,7 +343,7 @@ instances.each do |instance|
     end
 
   else #The instance does not exist, in which case we want to create it.
-    user_data = Vominator::Instances.generate_cloud_config(hostname, options[:environment], instance['family'], instance['chef_roles'], instance['chef_recipes'])
+    user_data = Vominator::Instances.generate_cloud_config(hostname, options[:environment], options[:environment].gsub('.','-'), instance['family'], instance['chef_roles'], instance['chef_recipes'])
     security_group_ids = instance_security_groups.map {|sg| vpc_security_groups[sg] }.compact
     unless test?("Would create #{fqdn}")
       ec2_instance = Vominator::EC2.create_instance(ec2, hostname, options[:environment], ami, existing_subnets[subnet].id, instance_type, key_name, instance_ip, instance_az, security_group_ids, user_data, ebs_optimized, instance['iam_profile'])
