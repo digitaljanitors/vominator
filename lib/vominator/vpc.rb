@@ -1,4 +1,6 @@
 require 'aws-sdk'
+require 'active_support'
+require 'active_support/core_ext/object/try'
 require_relative 'constants'
 
 module Vominator
@@ -12,7 +14,7 @@ module Vominator
 
     def self.create_vpc(client, cidr_block, tenancy='default')
       resp = client.create_vpc(:cidr_block => cidr_block, :instance_tenancy => tenancy)
-      sleep 2 until Vominator::VPC.get_vpc(client,resp.vpc.vpc_id).state == 'available'
+      sleep 2 until Vominator::VPC.get_vpc(client,resp.vpc.vpc_id).try(:state) == 'available'
       return resp.vpc
     end
 
@@ -27,7 +29,7 @@ module Vominator
 
     def self.attach_internet_gateway(client, gateway_id, vpc_id)
       resp = client.attach_internet_gateway(internet_gateway_id: gateway_id, vpc_id: vpc_id)
-      sleep 2 until Vominator::VPC.get_internet_gateway(client, gateway_id).attachments.first.state == 'available'
+      sleep 2 until Vominator::VPC.get_internet_gateway(client, gateway_id).try(:attachments).try(:first).try(:state) == 'available'
       return true
     end
 
@@ -37,7 +39,7 @@ module Vominator
    
     def self.create_nat_gateway(client, subnet_id, allocation_id)
       resp = client.create_nat_gateway(subnet_id: subnet_id, allocation_id: allocation_id).nat_gateway
-      sleep 2 until Vominator::VPC.get_nat_gateway(client, resp.nat_gateway_id).state == 'available'
+      sleep 2 until Vominator::VPC.get_nat_gateway(client, resp.nat_gateway_id).try(:state) == 'available'
       return resp
     end
  
@@ -69,7 +71,7 @@ module Vominator
 
     def self.create_subnet(client, vpc_id, cidr_block, availability_zone)
       resp = client.create_subnet(vpc_id: vpc_id, cidr_block: cidr_block, availability_zone: availability_zone).subnet
-      sleep 2 until Vominator::VPC.get_subnet(client, resp.subnet_id).state == 'available'
+      sleep 2 until Vominator::VPC.get_subnet(client, resp.subnet_id).try(:state) == 'available'
       return resp
     end
 

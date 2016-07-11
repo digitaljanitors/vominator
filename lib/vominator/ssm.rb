@@ -1,4 +1,6 @@
 require 'aws-sdk'
+require 'active_support'
+require 'active_support/core_ext/object/try'
 require_relative 'constants'
 
 module Vominator
@@ -25,7 +27,7 @@ module Vominator
 
     def self.put_document(client,name,data)
       client.create_document(:name => name, :content => data)
-      sleep 2 until Vominator::SSM.describe_document(client,name).status == 'active'
+      sleep 2 until Vominator::SSM.describe_document(client,name).try(:status) == 'active'
 
       if Vominator::SSM.describe_document(client,name).status == 'active'
         return true
