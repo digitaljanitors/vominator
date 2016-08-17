@@ -348,8 +348,9 @@ instances.each do |instance|
       key = tag.split('=')[0]
       value = tag.split('=')[1]
       unless ec2_instance_tags.key?(key) || (ec2_instance_tags.key?(key) && ec2_instance_tags[key] != value)
-        unless test?("Would create or update tag #{key}:#{value}")
+        unless test?("Would create or update tag #{key}:#{value} on #{fqdn}")
           Vominator::EC2.tag_resource(ec2_client, ec2_instance.id, [{key: key, value: value}])
+          LOGGER.success("Created or Updated tag #{key}:#{value} on #{fqdn}")
         end 
       end
     end
