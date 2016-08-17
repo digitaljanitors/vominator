@@ -144,6 +144,7 @@ instances.each do |instance|
   key_name = Vominator.get_key_pair(VOMINATOR_CONFIG)
   ssm_documents = instance['ssm_documents'].nil? ? [] : instance['ssm_documents']
   instance_az = instance['az'][options[:environment]] || instance['az']
+  instance_tags = instance['tags']
 
   LOGGER.info("Working on #{fqdn}")
 
@@ -178,6 +179,7 @@ instances.each do |instance|
     ec2_instance = Vominator::EC2.get_instance(ec2, ec2_instances[instance_ip][:instance_id])
     ec2_instance_security_groups = ec2_instances[instance_ip][:security_groups].uniq.sort
     ec2_instance_ebs_volumes = Vominator::EC2.get_instance_ebs_volumes(ec2, ec2_instances[instance_ip][:instance_id])
+    ec2_instance_tags = Hash[ec2_instance.tags.map{ |x| [x.key, x.value]}]
 
     if options[:disable_term_protection]
       unless test?("Would disable instance termination protection for #{fqdn}")
@@ -339,6 +341,16 @@ instances.each do |instance|
             LOGGER.fatal("Failed to associate #{doc_name} to #{fqdn}")
           end
         end
+      end
+    end
+    
+    instance_tags.each do |tag|
+      key = tag.split('=')[0]
+      value = tag.split('=')[1]
+      unless ec2_instance_tags.key?(key) || (ec2_instance_tags.key?(key) && ec2_instance_tags[key] != value)
+        unless test?("Would create or update tag #{key}:#{value}")
+          Vominator::EC2.tag_resource(ec2_client, ec2_instance.id, [{key: key, value: value}])
+        end 
       end
     end
 
