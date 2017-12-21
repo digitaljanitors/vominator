@@ -12,7 +12,7 @@ module Vominator
 
     class InstanceInfo
       # The URI to JSON data from ec2instances.info
-      @@uri = URI.parse('http://www.ec2instances.info/instances.json')
+      @@uri = URI.parse('https://www.ec2instances.info/instances.json')
       @@instances = nil
 
       attr_accessor :filepath
