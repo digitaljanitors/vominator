@@ -12,7 +12,7 @@ module Vominator
 
     class InstanceInfo
       # The URI to JSON data from ec2instances.info
-      @@uri = URI.parse('https://www.ec2instances.info/instances.json')
+      @@uri = URI.parse('https://raw.githubusercontent.com/powdahound/ec2instances.info/master/www/instances.json')
       @@instances = nil
 
       attr_accessor :filepath
@@ -41,10 +41,9 @@ module Vominator
 
       def refresh_info?
         return true if not File.exist?(self.filepath) or File.zero?(self.filepath)
-        last_modified = Net::HTTP.start(@@uri.hostname, @@uri.port,
-                        :use_ssl => @@uri.scheme == 'https') { |http|
-           http.request(Net::HTTP::Head.new(@@uri.request_uri))['last-modified'] }
-        Time.parse(last_modified) > File.ctime(self.filepath)
+        last_updated = File.ctime(self.filepath)
+
+        (Time.now - last_updated) > 86400
       end
 
       def get_instance_info()
