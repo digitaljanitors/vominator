@@ -159,7 +159,7 @@ instances.each do |instance|
   end
 
   if instance['ami']
-    ami = instance['ami']
+    ami = instance['ami'][options[:environment]] || instance['ami']
   else
     ami = Vominator::EC2.get_ami(puke_config,instance_type,instance['family'])
   end
