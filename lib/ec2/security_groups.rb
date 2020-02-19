@@ -103,8 +103,10 @@ end
 unless puke_security_groups
   LOGGER.fatal('Unable to load security groups . Make sure the product is correctly defined for the environment you have selected and that a security_groups.yaml file exists with at least one group defined.')
 end
+if VOMINATOR_CONFIG['use_profiles']
+  Aws.config[:credentials] = Aws::SharedCredentials.new(:profile_name => puke_config['account'])
+end
 
-Aws.config[:credentials] = Aws::SharedCredentials.new(:profile_name => puke_config['account'])
 ec2_client = Aws::EC2::Client.new(region: puke_config['region_name'])
 
 

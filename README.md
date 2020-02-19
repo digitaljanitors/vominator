@@ -21,7 +21,10 @@ See Usage for details about puke
 configuration_path: Location to puke
 key_pair_name: infrastructure@example.com
 instances_file: Location for cache file IE /Users/foo/.vominator/instances-metadata
+use_profiles: false
 ```
+
+use_profiles: false will cause the AWS SDK to use the default credential provider chain.
 
 ## Usage
 
