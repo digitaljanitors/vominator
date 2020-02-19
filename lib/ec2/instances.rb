@@ -110,7 +110,10 @@ unless instances
 end
 
 #Get ec2 connection, which is then passed to specific functions. Maybe a better way to do this?
-Aws.config[:credentials] = Aws::SharedCredentials.new(:profile_name => puke_config['account'])
+if VOMINATOR_CONFIG['use_profiles']
+  Aws.config[:credentials] = Aws::SharedCredentials.new(:profile_name => puke_config['account'])
+end
+
 ec2 = Aws::EC2::Resource.new(region: puke_config['region_name'])
 ec2_client = Aws::EC2::Client.new(region: puke_config['region_name'])
 
@@ -135,6 +138,19 @@ vpc_security_groups = Vominator::EC2.get_security_group_name_ids_hash(ec2, puke_
 instances.each do |instance|
   hostname = instance.keys[0]
   fqdn = "#{hostname}.#{puke_config['domain']}"
+
+  LOGGER.info("Working on #{fqdn}")
+
+  if instance['not_environment'] && instance['not_environment'].include?(options[:environment])
+    LOGGER.info("#{fqdn} is not marked for deployment in #{options[:environment]}")
+    next
+  end
+
+  if instance['environment'] && !instance['environment'].include?(options[:environment])
+    LOGGER.info("#{fqdn} is not marked for deployment in #{options[:environment]}")
+    next
+  end
+
   instance_type = instance['type'][options[:environment]] || instance['type']
   instance_ip = (instance['ip'][options[:environment]] || instance['ip']).sub('OCTET',puke_config['octet'])
   instance_security_groups = instance['security_groups'].map { |sg| sg}.uniq.sort
@@ -145,13 +161,6 @@ instances.each do |instance|
   ssm_documents = instance['ssm_documents'].nil? ? [] : instance['ssm_documents']
   instance_az = instance['az'][options[:environment]] || instance['az']
   instance_tags = instance['tags']
-
-  LOGGER.info("Working on #{fqdn}")
-
-  if instance['environment'] && !instance['environment'].include?(options[:environment])
-    LOGGER.info("#{fqdn} is not marked for deployment in #{options[:environment]}")
-    next
-  end
 
   if instance_type.nil?
     LOGGER.error("No instance size definition for #{fqdn}")
